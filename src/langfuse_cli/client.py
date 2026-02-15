@@ -234,7 +234,8 @@ class LangfuseClient:
     def list_datasets(self, *, limit: int = 50) -> list[dict[str, Any]]:
         """List datasets."""
         data = self._get("/v2/datasets", {"limit": limit})
-        return data.get("data", [])
+        result: list[dict[str, Any]] = data.get("data", [])
+        return result
 
     def get_dataset(self, name: str) -> dict[str, Any]:
         """Get a dataset by name."""
@@ -247,7 +248,8 @@ class LangfuseClient:
     def list_dataset_runs(self, dataset_name: str) -> list[dict[str, Any]]:
         """List runs for a dataset."""
         data = self._get(f"/datasets/{dataset_name}/runs")
-        return data.get("data", [])
+        result: list[dict[str, Any]] = data.get("data", [])
+        return result
 
     def get_dataset_run(self, dataset_name: str, run_name: str) -> dict[str, Any]:
         """Get a specific dataset run."""

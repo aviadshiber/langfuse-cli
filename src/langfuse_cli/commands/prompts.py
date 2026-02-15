@@ -101,7 +101,7 @@ def compile_prompt(
             key, value = v.split("=", 1)
             variables[key] = value
 
-        kwargs = {}
+        kwargs: dict[str, int | str] = {}
         if version is not None:
             kwargs["version"] = version
         if label is not None:
