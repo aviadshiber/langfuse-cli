@@ -248,12 +248,14 @@ class TestDatasetCommandIntegration:
 
     def test_list_help_shows_options(self) -> None:
         """Test that list command help shows options."""
+        from tests.conftest import strip_ansi
         result = runner.invoke(app, ["datasets", "list", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.stdout
+        assert "--limit" in strip_ansi(result.stdout)
 
     def test_get_help_shows_options(self) -> None:
         """Test that get command help shows options."""
+        from tests.conftest import strip_ansi
         result = runner.invoke(app, ["datasets", "get", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.stdout
+        assert "--limit" in strip_ansi(result.stdout)

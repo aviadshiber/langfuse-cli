@@ -36,9 +36,9 @@ def _load_toml(path: Path) -> dict[str, Any]:
         if sys.version_info >= (3, 11):
             import tomllib
         else:
-            import tomli as tomllib  # type: ignore[no-redef]
+            import tomli as tomllib  # type: ignore[no-redef, unused-ignore]
         with open(path, "rb") as f:
-            return tomllib.load(f)
+            return dict(tomllib.load(f))
     except Exception:
         logger.warning("Failed to parse config file: %s", path)
         return {}

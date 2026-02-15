@@ -415,12 +415,14 @@ class TestTraceCommandIntegration:
 
     def test_list_help_shows_filter_options(self) -> None:
         """Test that list command help shows all filter options."""
+        from tests.conftest import strip_ansi
         result = runner.invoke(app, ["traces", "list", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.stdout
-        assert "--user-id" in result.stdout
-        assert "--session-id" in result.stdout
-        assert "--tags" in result.stdout
-        assert "--name" in result.stdout
-        assert "--from" in result.stdout
-        assert "--to" in result.stdout
+        stdout = strip_ansi(result.stdout)
+        assert "--limit" in stdout
+        assert "--user-id" in stdout
+        assert "--session-id" in stdout
+        assert "--tags" in stdout
+        assert "--name" in stdout
+        assert "--from" in stdout
+        assert "--to" in stdout
