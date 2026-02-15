@@ -43,6 +43,8 @@ def get_installed_deps(exclude: str) -> list[tuple[str, str]]:
         "pytest", "pytest-cov", "pytest-mock", "respx", "ruff", "mypy",
         "mypy-extensions", "mypy_extensions", "coverage", "iniconfig", "pluggy",
         "pathspec", "librt",
+        # Linux-only keyring backends (cryptography needs Rust to build from source)
+        "secretstorage", "jeepney", "cryptography", "cffi", "pycparser",
     }
     deps = []
     for dist in importlib.metadata.distributions():
