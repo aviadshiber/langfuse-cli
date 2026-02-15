@@ -210,8 +210,10 @@ class TestSessionCommandIntegration:
 
     def test_list_help_shows_filter_options(self) -> None:
         """Test that list command help shows all filter options."""
+        from tests.conftest import strip_ansi
         result = runner.invoke(app, ["sessions", "list", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.stdout
-        assert "--from" in result.stdout
-        assert "--to" in result.stdout
+        stdout = strip_ansi(result.stdout)
+        assert "--limit" in stdout
+        assert "--from" in stdout
+        assert "--to" in stdout
