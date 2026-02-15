@@ -2,9 +2,6 @@
 """Generate a Homebrew formula for langfuse-cli.
 
 Usage: python3 scripts/generate-formula.py <version>
-
-Uses pip install with binary wheels to avoid building Rust-based
-dependencies (jiter, pydantic_core, cryptography) from source.
 """
 from __future__ import annotations
 
@@ -46,8 +43,8 @@ def generate_formula(version: str) -> str:
   depends_on "python@3.12"
 
   def install
-    virtualenv_create(libexec, "python3.12")
-    system libexec/"bin/pip", "install", "langfuse-cli==#{{version}}"
+    venv = virtualenv_create(libexec, "python3.12")
+    venv.pip_install buildpath
     bin.install_symlink Dir[libexec/"bin/lf"]
   end
 
