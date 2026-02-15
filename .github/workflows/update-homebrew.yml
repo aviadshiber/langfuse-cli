@@ -4,11 +4,12 @@ on:
   workflow_run:
     workflows: ["Publish to PyPI"]
     types: [completed]
+  workflow_dispatch:
 
 jobs:
   update-formula:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Get release version
         id: version
@@ -36,12 +37,41 @@ jobs:
             sleep 20
           done
 
-      - name: Generate formula with poet
+      - name: Generate formula
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          pip install setuptools "langfuse-cli==$PKG_VERSION" homebrew-pypi-poet
-          poet -f langfuse-cli > langfuse-cli.rb
+          SHA256=$(curl -s "https://pypi.org/pypi/langfuse-cli/${PKG_VERSION}/json" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for f in data['urls']:
+              if f['filename'].endswith('.tar.gz'):
+                  print(f['digests']['sha256'])
+                  break
+          ")
+          python3 -c "
+          print('''class LangfuseCli < Formula
+            include Language::Python::Virtualenv
+
+            desc \"CLI tool for Langfuse LLM observability platform\"
+            homepage \"https://github.com/aviadshiber/langfuse-cli\"
+            url \"https://pypi.io/packages/source/l/langfuse-cli/langfuse_cli-${PKG_VERSION}.tar.gz\"
+            sha256 \"${SHA256}\"
+            license \"MIT\"
+
+            depends_on \"python@3.12\"
+
+            def install
+              virtualenv_install_with_resources
+            end
+
+            test do
+              assert_match version.to_s, shell_output(\"#{bin}/lf --version\")
+            end
+          end''')
+          " > langfuse-cli.rb
+          echo "Generated formula:"
+          cat langfuse-cli.rb
 
       - name: Checkout tap repo
         uses: actions/checkout@v4
