@@ -40,7 +40,7 @@ jobs:
         env:
           PKG_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          pip install "langfuse-cli==$PKG_VERSION" homebrew-pypi-poet
+          pip install setuptools "langfuse-cli==$PKG_VERSION" homebrew-pypi-poet
           poet -f langfuse-cli > langfuse-cli.rb
 
       - name: Checkout tap repo
