@@ -1,5 +1,10 @@
 # langfuse-cli (`lf`)
 
+[![CI](https://github.com/aviadshiber/langfuse-cli/actions/workflows/test.yml/badge.svg)](https://github.com/aviadshiber/langfuse-cli/actions/workflows/test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/langfuse-cli)](https://pypi.org/project/langfuse-cli/)
+[![Python](https://img.shields.io/pypi/pyversions/langfuse-cli)](https://pypi.org/project/langfuse-cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Observability-first CLI for the [Langfuse](https://langfuse.com) LLM platform, following [gh-ux patterns](https://cli.github.com/manual/).
 
 **Features**: traces, prompts, scores, datasets, experiments, sessions | JSON/table/TSV output | config profiles | system keyring secrets | agent-friendly `--json` mode
@@ -13,8 +18,11 @@ uv tool install langfuse-cli
 # With pip
 pip install langfuse-cli
 
+# With Homebrew
+brew install aviadshiber/tap/langfuse-cli
+
 # From source
-git clone <repo-url> && cd langfuse-cli
+git clone https://github.com/aviadshiber/langfuse-cli.git && cd langfuse-cli
 uv sync && uv run lf --version
 ```
 
@@ -239,7 +247,7 @@ Hybrid SDK + REST approach:
 
 ```bash
 # Setup
-git clone <repo-url> && cd langfuse-cli
+git clone https://github.com/aviadshiber/langfuse-cli.git && cd langfuse-cli
 uv sync
 
 # Run tests (291 tests, ~97% coverage)
@@ -253,6 +261,8 @@ uv run mypy src/
 uv run lf --version
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
+
 ## License
 
-MIT
+[MIT](LICENSE)
