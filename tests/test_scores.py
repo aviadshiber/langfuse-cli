@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -238,9 +237,18 @@ class TestScoresSummaryCommand:
         """Test that summary computes statistics correctly."""
         # Create scores with known statistics
         scores = [
-            {"id": "s1", "traceId": "t1", "name": "quality", "value": 1.0, "observationId": None, "timestamp": "2024-01-15T10:30:00Z"},
-            {"id": "s2", "traceId": "t2", "name": "quality", "value": 0.0, "observationId": None, "timestamp": "2024-01-15T11:00:00Z"},
-            {"id": "s3", "traceId": "t3", "name": "quality", "value": 0.5, "observationId": None, "timestamp": "2024-01-15T11:30:00Z"},
+            {
+                "id": "s1", "traceId": "t1", "name": "quality",
+                "value": 1.0, "observationId": None, "timestamp": "2024-01-15T10:30:00Z",
+            },
+            {
+                "id": "s2", "traceId": "t2", "name": "quality",
+                "value": 0.0, "observationId": None, "timestamp": "2024-01-15T11:00:00Z",
+            },
+            {
+                "id": "s3", "traceId": "t3", "name": "quality",
+                "value": 0.5, "observationId": None, "timestamp": "2024-01-15T11:30:00Z",
+            },
         ]
         mock_client.list_scores.return_value = scores
 

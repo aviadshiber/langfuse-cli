@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from langfuse_cli.config import (
-    CONFIG_FILE,
     DEFAULT_HOST,
     KEYRING_SERVICE,
     LangfuseConfig,
@@ -287,7 +284,11 @@ class TestResolveConfig:
         # Point to empty temp dir
         monkeypatch.setattr("langfuse_cli.config.CONFIG_FILE", tmp_path / "config.toml")
         # Clear all env vars
-        for var in ["LANGFUSE_HOST", "LANGFUSE_BASEURL", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_PROFILE"]:
+        env_vars = [
+            "LANGFUSE_HOST", "LANGFUSE_BASEURL", "LANGFUSE_PUBLIC_KEY",
+            "LANGFUSE_SECRET_KEY", "LANGFUSE_PROFILE",
+        ]
+        for var in env_vars:
             monkeypatch.delenv(var, raising=False)
         # Mock keyring to prevent picking up real system keyring values
         monkeypatch.setattr("langfuse_cli.config._get_from_keyring", lambda account: None)

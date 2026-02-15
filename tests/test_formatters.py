@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from io import StringIO
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from langfuse_cli.formatters import diff, table, tree
 

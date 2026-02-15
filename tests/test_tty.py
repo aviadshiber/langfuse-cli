@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from langfuse_cli import _tty
 
 

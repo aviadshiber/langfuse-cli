@@ -14,3 +14,6 @@ htmlcov/
 .coverage
 *.egg
 *.zip
+
+# Claude Code
+.claude/

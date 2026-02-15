@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
 import pytest
@@ -480,8 +480,8 @@ class TestUtilityFunctions:
         class MockPrompt:
             name = "test-prompt"
             version = 1
-            labels = ["production"]
-            tags = ["verified"]
+            labels: ClassVar[list[str]] = ["production"]
+            tags: ClassVar[list[str]] = ["verified"]
             type = "chat"
 
         prompt = MockPrompt()
