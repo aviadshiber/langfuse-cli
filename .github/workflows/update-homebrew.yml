@@ -74,7 +74,7 @@ jobs:
           cat langfuse-cli.rb
 
       - name: Checkout tap repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: aviadshiber/homebrew-tap
           token: ${{ secrets.TAP_GITHUB_TOKEN }}
