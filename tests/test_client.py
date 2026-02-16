@@ -47,16 +47,20 @@ class TestLangfuseClient:
         expected = f"Basic {base64.b64encode(b'pk-test:sk-test').decode()}"
         assert auth_header == expected
         assert client._http.timeout == httpx.Timeout(60.0)
-        assert client._http.headers["User-Agent"] == "langfuse-cli/0.1.0"
+        from langfuse_cli import __version__
+
+        assert client._http.headers["User-Agent"] == f"langfuse-cli/{__version__}"
 
     def test_close_closes_httpx_client(self, client: LangfuseClient) -> None:
         """Test that close() closes the httpx client."""
         client.close()
         assert client._http.is_closed
 
-    def test_close_flushes_sdk_if_initialized(self, client: LangfuseClient, mocker: Any) -> None:
+    def test_close_flushes_sdk_if_initialized(self, client: LangfuseClient) -> None:
         """Test that close() flushes SDK if it was initialized."""
-        mock_sdk = mocker.MagicMock()
+        from unittest.mock import MagicMock
+
+        mock_sdk = MagicMock()
         client._sdk = mock_sdk
         client.close()
         mock_sdk.flush.assert_called_once()

@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 
+from langfuse_cli import __version__
 from langfuse_cli._exit_codes import ERROR, HTTP_NOT_FOUND, NOT_FOUND
 from langfuse_cli.config import LangfuseConfig
 
@@ -37,7 +38,7 @@ class LangfuseClient:
             base_url=f"{config.host}/api/public",
             auth=(config.public_key, config.secret_key),
             timeout=60.0,
-            headers={"User-Agent": "langfuse-cli/0.1.0"},
+            headers={"User-Agent": f"langfuse-cli/{__version__}"},
         )
         self._sdk: Any = None  # Lazy-init Langfuse SDK
 
