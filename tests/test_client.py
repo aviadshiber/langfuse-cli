@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, ClassVar
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 import respx
-
-from unittest.mock import MagicMock, patch
 
 from langfuse_cli._exit_codes import ERROR, NOT_FOUND
 from langfuse_cli.client import LangfuseAPIError, LangfuseClient, _clean_params, _iso_with_tz, _prompt_to_dict
@@ -567,7 +566,7 @@ class TestSDKProperty:
         client = LangfuseClient(test_config)
 
         with patch("langfuse.Langfuse") as mock_cls:
-            client.sdk
+            _ = client.sdk
 
         mock_cls.assert_called_once_with(
             public_key="pk-test",
