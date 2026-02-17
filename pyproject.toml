@@ -1,6 +1,6 @@
 [project]
 name = "langfuse-cli"
-version = "0.1.2"
+version = "0.1.3"
 description = "CLI tool for Langfuse LLM observability platform, following gh-ux patterns"
 requires-python = ">=3.10"
 readme = "README.md"
