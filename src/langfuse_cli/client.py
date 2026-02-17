@@ -46,13 +46,24 @@ class LangfuseClient:
     def sdk(self) -> Any:
         """Lazily initialize the Langfuse SDK."""
         if self._sdk is None:
-            from langfuse import Langfuse
+            try:
+                from langfuse import Langfuse
 
-            self._sdk = Langfuse(
-                public_key=self._config.public_key,
-                secret_key=self._config.secret_key,
-                host=self._config.host,
-            )
+                self._sdk = Langfuse(
+                    public_key=self._config.public_key,
+                    secret_key=self._config.secret_key,
+                    host=self._config.host,
+                )
+            except ImportError:
+                raise LangfuseAPIError(
+                    "Langfuse SDK not installed. Install with: pip install langfuse",
+                    exit_code=ERROR,
+                ) from None
+            except Exception as e:
+                raise LangfuseAPIError(
+                    f"Failed to initialize Langfuse SDK: {e}",
+                    exit_code=ERROR,
+                ) from e
         return self._sdk
 
     def close(self) -> None:

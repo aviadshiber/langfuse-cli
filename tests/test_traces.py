@@ -82,7 +82,7 @@ class TestTracesListCommand:
         """Test that 'lf traces list' outputs table with trace data."""
         mock_client.list_traces.return_value = SAMPLE_TRACES
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list"])
 
         assert result.exit_code == 0
@@ -103,7 +103,7 @@ class TestTracesListCommand:
         """Test that 'lf traces list --json' outputs JSON array."""
         mock_client.list_traces.return_value = SAMPLE_TRACES
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "traces", "list"])
 
         assert result.exit_code == 0
@@ -116,7 +116,7 @@ class TestTracesListCommand:
         """Test that 'lf traces list --limit 5' passes limit to client."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list", "--limit", "5"])
 
         assert result.exit_code == 0
@@ -128,7 +128,7 @@ class TestTracesListCommand:
         """Test that 'lf traces list --user-id foo' passes filter."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list", "--user-id", "user-123"])
 
         assert result.exit_code == 0
@@ -140,18 +140,29 @@ class TestTracesListCommand:
         """Test that session ID filter is passed correctly."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list", "--session-id", "session-456"])
 
         assert result.exit_code == 0
         call_kwargs = mock_client.list_traces.call_args.kwargs
         assert call_kwargs["session_id"] == "session-456"
 
+    def test_list_traces_with_session_id_short_flag(self, mock_client: MagicMock) -> None:
+        """Test that -s short flag works for --session-id."""
+        mock_client.list_traces.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["traces", "list", "-s", "session-789"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.list_traces.call_args.kwargs
+        assert call_kwargs["session_id"] == "session-789"
+
     def test_list_traces_with_tags_filter(self, mock_client: MagicMock) -> None:
         """Test that tags filter is parsed from comma-separated string."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list", "--tags", "production,urgent"])
 
         assert result.exit_code == 0
@@ -162,7 +173,7 @@ class TestTracesListCommand:
         """Test that name filter is passed correctly."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list", "--name", "chat-completion"])
 
         assert result.exit_code == 0
@@ -173,7 +184,7 @@ class TestTracesListCommand:
         """Test that date filters are passed correctly."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(
                 app,
                 [
@@ -199,7 +210,7 @@ class TestTracesListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list"])
 
         assert result.exit_code == ERROR
@@ -216,7 +227,7 @@ class TestTracesListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list"])
 
         assert result.exit_code == NOT_FOUND
@@ -226,7 +237,7 @@ class TestTracesListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list"])
 
         assert result.exit_code == 0
@@ -241,7 +252,7 @@ class TestTracesGetCommand:
         """Test that 'lf traces get <id>' shows trace detail."""
         mock_client.get_trace.return_value = SAMPLE_TRACE_DETAIL
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "get", "trace-1"])
 
         assert result.exit_code == 0
@@ -255,7 +266,7 @@ class TestTracesGetCommand:
         """Test that 'lf traces get <id> --json' outputs JSON."""
         mock_client.get_trace.return_value = SAMPLE_TRACE_DETAIL
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "traces", "get", "trace-1"])
 
         assert result.exit_code == 0
@@ -272,7 +283,7 @@ class TestTracesGetCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "get", "missing-trace"])
 
         assert result.exit_code == NOT_FOUND
@@ -288,7 +299,7 @@ class TestTracesGetCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "get", "trace-1"])
 
         assert result.exit_code == ERROR
@@ -303,7 +314,7 @@ class TestTracesTreeCommand:
         mock_client.get_trace.return_value = SAMPLE_TRACE_DETAIL
         mock_client.list_observations.return_value = SAMPLE_OBSERVATIONS
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             # Mock the tree renderer to avoid Rich output in tests
             with patch("langfuse_cli.formatters.tree.render_trace_tree") as mock_render:
                 result = runner.invoke(app, ["traces", "tree", "trace-1"])
@@ -323,7 +334,7 @@ class TestTracesTreeCommand:
         mock_client.get_trace.return_value = SAMPLE_TRACE_DETAIL
         mock_client.list_observations.return_value = SAMPLE_OBSERVATIONS
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             # Mock render_trace_tree but it should not be called in JSON mode
             with patch("langfuse_cli.formatters.tree.render_trace_tree") as mock_render:
                 result = runner.invoke(app, ["--json", "traces", "tree", "trace-1"])
@@ -343,7 +354,7 @@ class TestTracesTreeCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "tree", "missing-trace"])
 
         assert result.exit_code == NOT_FOUND
@@ -356,7 +367,7 @@ class TestTracesTreeCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "tree", "trace-1"])
 
         assert result.exit_code == ERROR
@@ -370,7 +381,7 @@ class TestTraceCommandIntegration:
         """Test that multiple filters can be combined."""
         mock_client.list_traces.return_value = []
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(
                 app,
                 [
@@ -398,7 +409,7 @@ class TestTraceCommandIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_traces.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.traces.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["traces", "list"])
 
         # Even though there was an error, close should still be called
@@ -416,6 +427,7 @@ class TestTraceCommandIntegration:
     def test_list_help_shows_filter_options(self) -> None:
         """Test that list command help shows all filter options."""
         from tests.conftest import strip_ansi
+
         result = runner.invoke(app, ["traces", "list", "--help"])
         assert result.exit_code == 0
         stdout = strip_ansi(result.stdout)

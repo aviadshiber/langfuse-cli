@@ -574,6 +574,20 @@ class TestSDKProperty:
             host="https://test.langfuse.com",
         )
 
+    def test_sdk_import_error(self, test_config: LangfuseConfig) -> None:
+        """Test SDK init handles ImportError gracefully."""
+        client = LangfuseClient(test_config)
+        with patch.dict("sys.modules", {"langfuse": None}):
+            with pytest.raises(LangfuseAPIError, match="not installed"):
+                _ = client.sdk
+
+    def test_sdk_init_exception(self, test_config: LangfuseConfig) -> None:
+        """Test SDK init handles generic exception gracefully."""
+        client = LangfuseClient(test_config)
+        with patch("langfuse.Langfuse", side_effect=RuntimeError("bad config")):
+            with pytest.raises(LangfuseAPIError, match="Failed to initialize"):
+                _ = client.sdk
+
 
 class TestListPrompts:
     """Test list_prompts() SDK method."""
@@ -695,9 +709,7 @@ class TestDatasetRunMethods:
     @respx.mock
     def test_get_dataset_run(self, client: LangfuseClient) -> None:
         """Test get_dataset_run() returns run data."""
-        mock_route = respx.get(
-            "https://test.langfuse.com/api/public/datasets/my-dataset/runs/run-1"
-        ).mock(
+        mock_route = respx.get("https://test.langfuse.com/api/public/datasets/my-dataset/runs/run-1").mock(
             return_value=httpx.Response(
                 200,
                 json={"name": "run-1", "description": "baseline"},
@@ -713,9 +725,7 @@ class TestDatasetRunMethods:
     @respx.mock
     def test_get_dataset_run_404(self, client: LangfuseClient) -> None:
         """Test get_dataset_run() raises on 404."""
-        respx.get(
-            "https://test.langfuse.com/api/public/datasets/my-dataset/runs/missing"
-        ).mock(
+        respx.get("https://test.langfuse.com/api/public/datasets/my-dataset/runs/missing").mock(
             return_value=httpx.Response(404, text="Not Found")
         )
 

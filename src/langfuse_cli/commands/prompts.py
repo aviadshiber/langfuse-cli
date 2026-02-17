@@ -2,39 +2,22 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import typer
 
-from langfuse_cli.client import LangfuseAPIError, LangfuseClient
-
-if TYPE_CHECKING:
-    from langfuse_cli.output import OutputContext
+from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
-
-
-def _get_client() -> tuple[LangfuseClient, OutputContext]:
-    from langfuse_cli.main import state
-
-    return LangfuseClient(state.config), state.output
 
 
 @app.command("list")
 def list_prompts() -> None:
     """List all prompts in the project."""
-    client, output = _get_client()
-    try:
+    with command_context("listing prompts") as (client, output):
         prompts = client.list_prompts()
         output.render_table(
             prompts,
             columns=["name", "version", "type", "labels", "tags"],
         )
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    finally:
-        client.close()
 
 
 @app.command("get")
@@ -44,8 +27,7 @@ def get_prompt(
     label: str | None = typer.Option(None, "--label", help="Label (e.g., 'production')."),
 ) -> None:
     """Get a specific prompt by name, version, or label."""
-    client, output = _get_client()
-    try:
+    with command_context("getting prompt", catch_all=True) as (client, output):
         prompt = client.get_prompt(name, version=version, label=label)
         data = {
             "name": prompt.name,
@@ -55,7 +37,6 @@ def get_prompt(
             "config": getattr(prompt, "config", {}),
         }
 
-        # Add content based on type
         if hasattr(prompt, "prompt"):
             data["prompt"] = prompt.prompt
         if hasattr(prompt, "messages"):
@@ -73,14 +54,6 @@ def get_prompt(
                 ("Messages", "messages"),
             ],
         )
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    except Exception as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(1) from None
-    finally:
-        client.close()
 
 
 @app.command("compile")
@@ -91,8 +64,7 @@ def compile_prompt(
     label: str | None = typer.Option(None, "--label", help="Label (e.g., 'production')."),
 ) -> None:
     """Compile a prompt with variables."""
-    client, output = _get_client()
-    try:
+    with command_context("compiling prompt") as (client, output):
         variables = {}
         for v in var:
             if "=" not in v:
@@ -109,11 +81,6 @@ def compile_prompt(
 
         compiled = client.compile_prompt(name, variables, **kwargs)
         output.render_json(compiled)
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    finally:
-        client.close()
 
 
 @app.command("diff")
@@ -123,8 +90,7 @@ def diff_prompts(
     v2: int = typer.Option(..., "--v2", help="Second version number."),
 ) -> None:
     """Compare two versions of a prompt side-by-side."""
-    client, output = _get_client()
-    try:
+    with command_context("comparing prompt versions") as (client, output):
         prompt1 = client.get_prompt(name, version=v1)
         prompt2 = client.get_prompt(name, version=v2)
 
@@ -132,18 +98,15 @@ def diff_prompts(
         text2 = getattr(prompt2, "prompt", None) or str(getattr(prompt2, "messages", ""))
 
         if output.is_json_mode:
-            output.render_json({
-                "name": name,
-                "v1": {"version": v1, "content": text1},
-                "v2": {"version": v2, "content": text2},
-            })
+            output.render_json(
+                {
+                    "name": name,
+                    "v1": {"version": v1, "content": text1},
+                    "v2": {"version": v2, "content": text2},
+                }
+            )
             return
 
         from langfuse_cli.formatters.diff import render_diff
 
         render_diff(text1, text2, labels=(f"v{v1}", f"v{v2}"))
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    finally:
-        client.close()

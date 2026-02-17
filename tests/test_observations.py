@@ -61,7 +61,7 @@ class TestObservationsListCommand:
         """Test that 'lf observations list' outputs table with observation data."""
         mock_client.list_observations.return_value = SAMPLE_OBSERVATIONS
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list"])
 
         assert result.exit_code == 0
@@ -77,7 +77,7 @@ class TestObservationsListCommand:
         """Test that 'lf --json observations list' outputs JSON array."""
         mock_client.list_observations.return_value = SAMPLE_OBSERVATIONS
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "observations", "list"])
 
         assert result.exit_code == 0
@@ -90,7 +90,7 @@ class TestObservationsListCommand:
         """Test that 'lf observations list --limit 10' passes limit to client."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list", "--limit", "10"])
 
         assert result.exit_code == 0
@@ -101,7 +101,7 @@ class TestObservationsListCommand:
         """Test that 'lf observations list --trace-id X' passes filter."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list", "--trace-id", "trace-123"])
 
         assert result.exit_code == 0
@@ -112,7 +112,7 @@ class TestObservationsListCommand:
         """Test that 'lf observations list --type GENERATION' passes type filter."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list", "--type", "GENERATION"])
 
         assert result.exit_code == 0
@@ -123,7 +123,7 @@ class TestObservationsListCommand:
         """Test that 'lf observations list --name llm-call' passes name filter."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list", "--name", "llm-call"])
 
         assert result.exit_code == 0
@@ -138,7 +138,7 @@ class TestObservationsListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list"])
 
         assert result.exit_code == ERROR
@@ -154,7 +154,7 @@ class TestObservationsListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list"])
 
         assert result.exit_code == NOT_FOUND
@@ -164,7 +164,7 @@ class TestObservationsListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list"])
 
         assert result.exit_code == 0
@@ -177,7 +177,7 @@ class TestObservationsIntegration:
         """Test that multiple filters can be combined."""
         mock_client.list_observations.return_value = []
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(
                 app,
                 [
@@ -205,7 +205,7 @@ class TestObservationsIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_observations.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.observations.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["observations", "list"])
 
         assert result.exit_code == ERROR

@@ -51,7 +51,7 @@ class TestSessionsListCommand:
         """Test that 'lf sessions list' outputs table with session data."""
         mock_client.list_sessions.return_value = SAMPLE_SESSIONS
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list"])
 
         assert result.exit_code == 0
@@ -66,7 +66,7 @@ class TestSessionsListCommand:
         """Test that 'lf sessions list --json' outputs JSON array."""
         mock_client.list_sessions.return_value = SAMPLE_SESSIONS
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "sessions", "list"])
 
         assert result.exit_code == 0
@@ -79,7 +79,7 @@ class TestSessionsListCommand:
         """Test that 'lf sessions list --limit 10' passes limit to client."""
         mock_client.list_sessions.return_value = []
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list", "--limit", "10"])
 
         assert result.exit_code == 0
@@ -95,7 +95,7 @@ class TestSessionsListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list"])
 
         assert result.exit_code == ERROR
@@ -111,7 +111,7 @@ class TestSessionsListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list"])
 
         assert result.exit_code == NOT_FOUND
@@ -121,7 +121,7 @@ class TestSessionsListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_sessions.return_value = []
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list"])
 
         assert result.exit_code == 0
@@ -134,7 +134,7 @@ class TestSessionsGetCommand:
         """Test that 'lf sessions get <id>' shows session detail."""
         mock_client.get_session.return_value = SAMPLE_SESSION_DETAIL
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "get", "sess-1"])
 
         assert result.exit_code == 0
@@ -148,7 +148,7 @@ class TestSessionsGetCommand:
         """Test that 'lf sessions get <id> --json' outputs JSON."""
         mock_client.get_session.return_value = SAMPLE_SESSION_DETAIL
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "sessions", "get", "sess-1"])
 
         assert result.exit_code == 0
@@ -165,7 +165,7 @@ class TestSessionsGetCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "get", "missing-session"])
 
         assert result.exit_code == NOT_FOUND
@@ -181,7 +181,7 @@ class TestSessionsGetCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "get", "sess-1"])
 
         assert result.exit_code == ERROR
@@ -195,7 +195,7 @@ class TestSessionCommandIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_sessions.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.sessions.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["sessions", "list"])
 
         assert result.exit_code == ERROR
@@ -211,6 +211,7 @@ class TestSessionCommandIntegration:
     def test_list_help_shows_filter_options(self) -> None:
         """Test that list command help shows all filter options."""
         from tests.conftest import strip_ansi
+
         result = runner.invoke(app, ["sessions", "list", "--help"])
         assert result.exit_code == 0
         stdout = strip_ansi(result.stdout)

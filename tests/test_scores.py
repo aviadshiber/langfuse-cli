@@ -58,7 +58,7 @@ class TestScoresListCommand:
         """Test that 'lf scores list' outputs table with score data."""
         mock_client.list_scores.return_value = SAMPLE_SCORES
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list"])
 
         assert result.exit_code == 0
@@ -75,7 +75,7 @@ class TestScoresListCommand:
         """Test that 'lf scores list --json' outputs JSON array."""
         mock_client.list_scores.return_value = SAMPLE_SCORES
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "scores", "list"])
 
         assert result.exit_code == 0
@@ -89,7 +89,7 @@ class TestScoresListCommand:
         """Test that 'lf scores list --limit 10' passes limit to client."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list", "--limit", "10"])
 
         assert result.exit_code == 0
@@ -101,7 +101,7 @@ class TestScoresListCommand:
         """Test that 'lf scores list --trace-id X' passes filter."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list", "--trace-id", "t1"])
 
         assert result.exit_code == 0
@@ -109,11 +109,22 @@ class TestScoresListCommand:
         call_kwargs = mock_client.list_scores.call_args.kwargs
         assert call_kwargs["trace_id"] == "t1"
 
+    def test_list_scores_with_trace_id_short_flag(self, mock_client: MagicMock) -> None:
+        """Test that -t short flag works for --trace-id."""
+        mock_client.list_scores.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["scores", "list", "-t", "t2"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.list_scores.call_args.kwargs
+        assert call_kwargs["trace_id"] == "t2"
+
     def test_list_scores_with_name_filter(self, mock_client: MagicMock) -> None:
         """Test that 'lf scores list --name quality' passes name filter."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list", "--name", "quality"])
 
         assert result.exit_code == 0
@@ -128,7 +139,7 @@ class TestScoresListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list"])
 
         assert result.exit_code == ERROR
@@ -144,7 +155,7 @@ class TestScoresListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list"])
 
         assert result.exit_code == NOT_FOUND
@@ -154,7 +165,7 @@ class TestScoresListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list"])
 
         assert result.exit_code == 0
@@ -167,7 +178,7 @@ class TestScoresSummaryCommand:
         """Test that 'lf scores summary' computes mean/min/max/count grouped by name."""
         mock_client.list_scores.return_value = SAMPLE_SCORES
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "summary"])
 
         assert result.exit_code == 0
@@ -186,7 +197,7 @@ class TestScoresSummaryCommand:
         """Test that 'lf scores summary --json' outputs JSON with statistics."""
         mock_client.list_scores.return_value = SAMPLE_SCORES
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "scores", "summary"])
 
         assert result.exit_code == 0
@@ -199,7 +210,7 @@ class TestScoresSummaryCommand:
         quality_scores = [s for s in SAMPLE_SCORES if s["name"] == "quality"]
         mock_client.list_scores.return_value = quality_scores
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "summary", "--name", "quality"])
 
         assert result.exit_code == 0
@@ -211,7 +222,7 @@ class TestScoresSummaryCommand:
         """Test that empty scores show appropriate message."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "summary"])
 
         assert result.exit_code == 0
@@ -227,7 +238,7 @@ class TestScoresSummaryCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "summary"])
 
         assert result.exit_code == ERROR
@@ -238,21 +249,33 @@ class TestScoresSummaryCommand:
         # Create scores with known statistics
         scores = [
             {
-                "id": "s1", "traceId": "t1", "name": "quality",
-                "value": 1.0, "observationId": None, "timestamp": "2024-01-15T10:30:00Z",
+                "id": "s1",
+                "traceId": "t1",
+                "name": "quality",
+                "value": 1.0,
+                "observationId": None,
+                "timestamp": "2024-01-15T10:30:00Z",
             },
             {
-                "id": "s2", "traceId": "t2", "name": "quality",
-                "value": 0.0, "observationId": None, "timestamp": "2024-01-15T11:00:00Z",
+                "id": "s2",
+                "traceId": "t2",
+                "name": "quality",
+                "value": 0.0,
+                "observationId": None,
+                "timestamp": "2024-01-15T11:00:00Z",
             },
             {
-                "id": "s3", "traceId": "t3", "name": "quality",
-                "value": 0.5, "observationId": None, "timestamp": "2024-01-15T11:30:00Z",
+                "id": "s3",
+                "traceId": "t3",
+                "name": "quality",
+                "value": 0.5,
+                "observationId": None,
+                "timestamp": "2024-01-15T11:30:00Z",
             },
         ]
         mock_client.list_scores.return_value = scores
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "scores", "summary"])
 
         assert result.exit_code == 0
@@ -269,7 +292,7 @@ class TestScoreCommandIntegration:
         """Test that multiple filters can be combined."""
         mock_client.list_scores.return_value = []
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(
                 app,
                 [
@@ -294,7 +317,7 @@ class TestScoreCommandIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_scores.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.scores.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["scores", "list"])
 
         assert result.exit_code == ERROR
@@ -310,6 +333,7 @@ class TestScoreCommandIntegration:
     def test_list_help_shows_filter_options(self) -> None:
         """Test that list command help shows all filter options."""
         from tests.conftest import strip_ansi
+
         result = runner.invoke(app, ["scores", "list", "--help"])
         assert result.exit_code == 0
         stdout = strip_ansi(result.stdout)

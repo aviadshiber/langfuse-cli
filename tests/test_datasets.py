@@ -67,7 +67,7 @@ class TestDatasetsListCommand:
         """Test that 'lf datasets list' outputs table with dataset data."""
         mock_client.list_datasets.return_value = SAMPLE_DATASETS
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list"])
 
         assert result.exit_code == 0
@@ -78,7 +78,7 @@ class TestDatasetsListCommand:
         """Test that 'lf datasets list --json' outputs JSON array."""
         mock_client.list_datasets.return_value = SAMPLE_DATASETS
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "datasets", "list"])
 
         assert result.exit_code == 0
@@ -91,7 +91,7 @@ class TestDatasetsListCommand:
         """Test that 'lf datasets list --limit 10' passes limit to client."""
         mock_client.list_datasets.return_value = []
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list", "--limit", "10"])
 
         assert result.exit_code == 0
@@ -105,7 +105,7 @@ class TestDatasetsListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list"])
 
         assert result.exit_code == ERROR
@@ -121,7 +121,7 @@ class TestDatasetsListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list"])
 
         assert result.exit_code == NOT_FOUND
@@ -131,7 +131,7 @@ class TestDatasetsListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_datasets.return_value = []
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list"])
 
         assert result.exit_code == 0
@@ -145,7 +145,7 @@ class TestDatasetsGetCommand:
         mock_client.get_dataset.return_value = SAMPLE_DATASET_DETAIL
         mock_client.list_dataset_items.return_value = SAMPLE_DATASET_ITEMS
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "get", "test-dataset-1"])
 
         assert result.exit_code == 0
@@ -161,7 +161,7 @@ class TestDatasetsGetCommand:
         mock_client.get_dataset.return_value = SAMPLE_DATASET_DETAIL
         mock_client.list_dataset_items.return_value = SAMPLE_DATASET_ITEMS
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "datasets", "get", "test-dataset-1"])
 
         assert result.exit_code == 0
@@ -176,7 +176,7 @@ class TestDatasetsGetCommand:
         mock_client.get_dataset.return_value = SAMPLE_DATASET_DETAIL
         mock_client.list_dataset_items.return_value = []
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "get", "test-dataset-1", "--limit", "10"])
 
         assert result.exit_code == 0
@@ -190,7 +190,7 @@ class TestDatasetsGetCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "get", "missing-dataset"])
 
         assert result.exit_code == NOT_FOUND
@@ -206,7 +206,7 @@ class TestDatasetsGetCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "get", "test-dataset-1"])
 
         assert result.exit_code == ERROR
@@ -217,7 +217,7 @@ class TestDatasetsGetCommand:
         mock_client.get_dataset.return_value = SAMPLE_DATASET_DETAIL
         mock_client.list_dataset_items.return_value = []
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "get", "test-dataset-1"])
 
         assert result.exit_code == 0
@@ -233,7 +233,7 @@ class TestDatasetCommandIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_datasets.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.datasets.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["datasets", "list"])
 
         assert result.exit_code == ERROR
@@ -249,6 +249,7 @@ class TestDatasetCommandIntegration:
     def test_list_help_shows_options(self) -> None:
         """Test that list command help shows options."""
         from tests.conftest import strip_ansi
+
         result = runner.invoke(app, ["datasets", "list", "--help"])
         assert result.exit_code == 0
         assert "--limit" in strip_ansi(result.stdout)
@@ -256,6 +257,7 @@ class TestDatasetCommandIntegration:
     def test_get_help_shows_options(self) -> None:
         """Test that get command help shows options."""
         from tests.conftest import strip_ansi
+
         result = runner.invoke(app, ["datasets", "get", "--help"])
         assert result.exit_code == 0
         assert "--limit" in strip_ansi(result.stdout)

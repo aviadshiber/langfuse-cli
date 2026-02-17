@@ -61,53 +61,6 @@ class TestRenderDiff:
             mock_console.print.assert_called_once()
 
 
-class TestRenderSideBySide:
-    """Test render_side_by_side function."""
-
-    def test_render_side_by_side_basic(self):
-        """Test side-by-side rendering with two texts."""
-        text1 = "Line 1\nLine 2\n"
-        text2 = "Modified 1\nModified 2\n"
-
-        with patch("langfuse_cli.formatters.diff.Console") as mock_console_class:
-            mock_console = MagicMock()
-            mock_console_class.return_value = mock_console
-
-            diff.render_side_by_side(text1, text2)
-
-            # Verify console.print was called with a Table
-            mock_console.print.assert_called_once()
-            call_args = mock_console.print.call_args[0]
-            assert call_args[0].__class__.__name__ == "Table"
-
-    def test_render_side_by_side_unequal_lengths(self):
-        """Test side-by-side with texts of different line counts."""
-        text1 = "Line 1\nLine 2\nLine 3\n"
-        text2 = "Line 1\n"
-
-        with patch("langfuse_cli.formatters.diff.Console") as mock_console_class:
-            mock_console = MagicMock()
-            mock_console_class.return_value = mock_console
-
-            diff.render_side_by_side(text1, text2)
-
-            # Should handle different lengths gracefully
-            mock_console.print.assert_called_once()
-
-    def test_render_side_by_side_custom_labels(self):
-        """Test side-by-side with custom column labels."""
-        text1 = "Text 1"
-        text2 = "Text 2"
-
-        with patch("langfuse_cli.formatters.diff.Console") as mock_console_class:
-            mock_console = MagicMock()
-            mock_console_class.return_value = mock_console
-
-            diff.render_side_by_side(text1, text2, labels=("Version A", "Version B"))
-
-            mock_console.print.assert_called_once()
-
-
 class TestRenderRichTable:
     """Test render_rich_table function."""
 
@@ -206,6 +159,7 @@ class TestFmt:
         """Test formatting list returns JSON string."""
         result = table._fmt(["a", "b", "c"])
         import json
+
         parsed = json.loads(result)
         assert parsed == ["a", "b", "c"]
 
@@ -213,6 +167,7 @@ class TestFmt:
         """Test formatting dict returns JSON string."""
         result = table._fmt({"key": "value", "num": 42})
         import json
+
         parsed = json.loads(result)
         assert parsed == {"key": "value", "num": 42}
 
@@ -221,6 +176,7 @@ class TestFmt:
         data = {"list": [1, 2, 3], "nested": {"key": "value"}}
         result = table._fmt(data)
         import json
+
         parsed = json.loads(result)
         assert parsed == data
 

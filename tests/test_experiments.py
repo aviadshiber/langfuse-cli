@@ -63,7 +63,7 @@ class TestExperimentsListCommand:
         """Test that 'lf experiments list <dataset>' outputs table with run data."""
         mock_client.list_dataset_runs.return_value = SAMPLE_RUNS
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "list", "test-dataset"])
 
         assert result.exit_code == 0
@@ -74,7 +74,7 @@ class TestExperimentsListCommand:
         """Test that 'lf experiments list <dataset> --json' outputs JSON array."""
         mock_client.list_dataset_runs.return_value = SAMPLE_RUNS
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "experiments", "list", "test-dataset"])
 
         assert result.exit_code == 0
@@ -91,7 +91,7 @@ class TestExperimentsListCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "list", "test-dataset"])
 
         assert result.exit_code == ERROR
@@ -107,7 +107,7 @@ class TestExperimentsListCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "list", "missing-dataset"])
 
         assert result.exit_code == NOT_FOUND
@@ -117,7 +117,7 @@ class TestExperimentsListCommand:
         """Test that empty results are handled gracefully."""
         mock_client.list_dataset_runs.return_value = []
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "list", "test-dataset"])
 
         assert result.exit_code == 0
@@ -130,7 +130,7 @@ class TestExperimentsCompareCommand:
         """Test that 'lf experiments compare <dataset> <run1> <run2>' shows comparison table."""
         mock_client.get_dataset_run.side_effect = [SAMPLE_RUN_DATA, SAMPLE_RUN_DATA_2]
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             # Mock Rich Console to avoid terminal output in tests
             with patch("rich.console.Console") as mock_console_class:
                 mock_console = MagicMock()
@@ -150,7 +150,7 @@ class TestExperimentsCompareCommand:
         """Test that 'lf experiments compare <dataset> <run1> <run2> --json' outputs JSON comparison."""
         mock_client.get_dataset_run.side_effect = [SAMPLE_RUN_DATA, SAMPLE_RUN_DATA_2]
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["--json", "experiments", "compare", "test-dataset", "run-v1", "run-v2"])
 
         assert result.exit_code == 0
@@ -168,7 +168,7 @@ class TestExperimentsCompareCommand:
             exit_code=NOT_FOUND,
         )
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "compare", "test-dataset", "missing-run", "run-v2"])
 
         assert result.exit_code == NOT_FOUND
@@ -178,6 +178,7 @@ class TestExperimentsCompareCommand:
 
     def test_compare_experiments_second_run_not_found(self, mock_client: MagicMock) -> None:
         """Test that missing second run returns NOT_FOUND exit code."""
+
         def side_effect(dataset: str, run_name: str) -> dict[str, Any]:
             if run_name == "run-v1":
                 return SAMPLE_RUN_DATA
@@ -189,7 +190,7 @@ class TestExperimentsCompareCommand:
 
         mock_client.get_dataset_run.side_effect = side_effect
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "compare", "test-dataset", "run-v1", "missing-run"])
 
         assert result.exit_code == NOT_FOUND
@@ -203,7 +204,7 @@ class TestExperimentsCompareCommand:
             exit_code=ERROR,
         )
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "compare", "test-dataset", "run-v1", "run-v2"])
 
         assert result.exit_code == ERROR
@@ -217,7 +218,7 @@ class TestExperimentCommandIntegration:
         """Test that client is closed even when errors occur."""
         mock_client.list_dataset_runs.side_effect = LangfuseAPIError("Error", exit_code=ERROR)
 
-        with patch("langfuse_cli.commands.experiments.LangfuseClient", return_value=mock_client):
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["experiments", "list", "test-dataset"])
 
         assert result.exit_code == ERROR

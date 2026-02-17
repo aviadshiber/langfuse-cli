@@ -155,9 +155,7 @@ class TestKeyring:
             result = set_keyring_secret("test-account", "secret-value")
 
         assert result is True
-        mock_keyring.set_password.assert_called_once_with(
-            KEYRING_SERVICE, "test-account", "secret-value"
-        )
+        mock_keyring.set_password.assert_called_once_with(KEYRING_SERVICE, "test-account", "secret-value")
 
     def test_set_keyring_secret_unavailable(self, caplog):
         """Test keyring storage when keyring not available."""
@@ -285,8 +283,11 @@ class TestResolveConfig:
         monkeypatch.setattr("langfuse_cli.config.CONFIG_FILE", tmp_path / "config.toml")
         # Clear all env vars
         env_vars = [
-            "LANGFUSE_HOST", "LANGFUSE_BASEURL", "LANGFUSE_PUBLIC_KEY",
-            "LANGFUSE_SECRET_KEY", "LANGFUSE_PROFILE",
+            "LANGFUSE_HOST",
+            "LANGFUSE_BASEURL",
+            "LANGFUSE_PUBLIC_KEY",
+            "LANGFUSE_SECRET_KEY",
+            "LANGFUSE_PROFILE",
         ]
         for var in env_vars:
             monkeypatch.delenv(var, raising=False)

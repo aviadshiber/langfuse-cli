@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import typer
 
-from langfuse_cli.client import LangfuseAPIError, LangfuseClient
-
-if TYPE_CHECKING:
-    from langfuse_cli.output import OutputContext
+from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
-
-
-def _get_client() -> tuple[LangfuseClient, OutputContext]:
-    from langfuse_cli.main import state
-
-    return LangfuseClient(state.config), state.output
 
 
 @app.command("list")
@@ -25,18 +14,12 @@ def list_experiments(
     dataset_name: str = typer.Argument(help="Dataset name to list runs for."),
 ) -> None:
     """List experiment runs for a dataset."""
-    client, output = _get_client()
-    try:
+    with command_context("listing experiments") as (client, output):
         runs = client.list_dataset_runs(dataset_name)
         output.render_table(
             runs,
             columns=["name", "description", "createdAt", "updatedAt"],
         )
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    finally:
-        client.close()
 
 
 @app.command("compare")
@@ -46,17 +29,18 @@ def compare_experiments(
     run2: str = typer.Argument(help="Second run name."),
 ) -> None:
     """Compare two experiment runs side-by-side."""
-    client, output = _get_client()
-    try:
+    with command_context("comparing experiments") as (client, output):
         data1 = client.get_dataset_run(dataset_name, run1)
         data2 = client.get_dataset_run(dataset_name, run2)
 
         if output.is_json_mode:
-            output.render_json({
-                "dataset": dataset_name,
-                "run1": {"name": run1, "data": data1},
-                "run2": {"name": run2, "data": data2},
-            })
+            output.render_json(
+                {
+                    "dataset": dataset_name,
+                    "run1": {"name": run1, "data": data1},
+                    "run2": {"name": run2, "data": data2},
+                }
+            )
             return
 
         from rich.console import Console
@@ -74,8 +58,3 @@ def compare_experiments(
             table.add_row(field, v1, v2)
 
         console.print(table)
-    except LangfuseAPIError as e:
-        output.error(f"error: {e}")
-        raise typer.Exit(e.exit_code) from None
-    finally:
-        client.close()
