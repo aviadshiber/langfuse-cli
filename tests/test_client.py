@@ -9,8 +9,10 @@ import httpx
 import pytest
 import respx
 
+from unittest.mock import MagicMock, patch
+
 from langfuse_cli._exit_codes import ERROR, NOT_FOUND
-from langfuse_cli.client import LangfuseAPIError, LangfuseClient, _clean_params, _prompt_to_dict
+from langfuse_cli.client import LangfuseAPIError, LangfuseClient, _clean_params, _iso_with_tz, _prompt_to_dict
 from langfuse_cli.config import LangfuseConfig
 
 
@@ -522,3 +524,247 @@ class TestUtilityFunctions:
 
         assert "raw" in result
         assert isinstance(result["raw"], str)
+
+
+class TestIsoWithTz:
+    """Test _iso_with_tz() utility function."""
+
+    def test_naive_datetime_gets_utc(self) -> None:
+        """Test that naive datetimes get UTC timezone added."""
+        dt = datetime(2026, 1, 15, 10, 30, 0)
+        result = _iso_with_tz(dt)
+        assert "+00:00" in result
+        assert result == "2026-01-15T10:30:00+00:00"
+
+    def test_aware_datetime_preserved(self) -> None:
+        """Test that timezone-aware datetimes keep their timezone."""
+        dt = datetime(2026, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        result = _iso_with_tz(dt)
+        assert result == "2026-01-15T10:30:00+00:00"
+
+
+class TestSDKProperty:
+    """Test the SDK lazy initialization property."""
+
+    def test_sdk_lazy_init_caches(self, test_config: LangfuseConfig) -> None:
+        """Test that SDK is initialized once and cached."""
+        client = LangfuseClient(test_config)
+        mock_langfuse = MagicMock()
+
+        with patch("langfuse.Langfuse", return_value=mock_langfuse) as mock_cls:
+            sdk1 = client.sdk
+            sdk2 = client.sdk
+
+        assert sdk1 is sdk2
+        mock_cls.assert_called_once_with(
+            public_key="pk-test",
+            secret_key="sk-test",
+            host="https://test.langfuse.com",
+        )
+
+    def test_sdk_passes_config(self, test_config: LangfuseConfig) -> None:
+        """Test that SDK receives correct configuration."""
+        client = LangfuseClient(test_config)
+
+        with patch("langfuse.Langfuse") as mock_cls:
+            client.sdk
+
+        mock_cls.assert_called_once_with(
+            public_key="pk-test",
+            secret_key="sk-test",
+            host="https://test.langfuse.com",
+        )
+
+
+class TestListPrompts:
+    """Test list_prompts() SDK method."""
+
+    def test_list_prompts_calls_sdk(self, client: LangfuseClient) -> None:
+        """Test that list_prompts() calls SDK and converts results."""
+        mock_prompt = MagicMock()
+        mock_prompt.name = "test-prompt"
+        mock_prompt.version = 1
+        mock_prompt.labels = ["production"]
+        mock_prompt.tags = ["verified"]
+        mock_prompt.type = "text"
+
+        mock_sdk = MagicMock()
+        mock_sdk.api.prompts.list.return_value.data = [mock_prompt]
+        client._sdk = mock_sdk
+
+        result = client.list_prompts()
+
+        assert len(result) == 1
+        assert result[0]["name"] == "test-prompt"
+        assert result[0]["version"] == 1
+        mock_sdk.api.prompts.list.assert_called_once()
+
+    def test_list_prompts_empty(self, client: LangfuseClient) -> None:
+        """Test that list_prompts() handles empty results."""
+        mock_sdk = MagicMock()
+        mock_sdk.api.prompts.list.return_value.data = []
+        client._sdk = mock_sdk
+
+        result = client.list_prompts()
+
+        assert result == []
+
+
+class TestGetPrompt:
+    """Test get_prompt() SDK method."""
+
+    def test_get_prompt_name_only(self, client: LangfuseClient) -> None:
+        """Test get_prompt() with just a name."""
+        mock_sdk = MagicMock()
+        client._sdk = mock_sdk
+
+        client.get_prompt("my-prompt")
+
+        mock_sdk.get_prompt.assert_called_once_with("my-prompt")
+
+    def test_get_prompt_with_version(self, client: LangfuseClient) -> None:
+        """Test get_prompt() passes version kwarg."""
+        mock_sdk = MagicMock()
+        client._sdk = mock_sdk
+
+        client.get_prompt("my-prompt", version=3)
+
+        mock_sdk.get_prompt.assert_called_once_with("my-prompt", version=3)
+
+    def test_get_prompt_with_label(self, client: LangfuseClient) -> None:
+        """Test get_prompt() passes label kwarg."""
+        mock_sdk = MagicMock()
+        client._sdk = mock_sdk
+
+        client.get_prompt("my-prompt", label="production")
+
+        mock_sdk.get_prompt.assert_called_once_with("my-prompt", label="production")
+
+
+class TestCompilePrompt:
+    """Test compile_prompt() SDK method."""
+
+    def test_compile_prompt(self, client: LangfuseClient) -> None:
+        """Test that compile_prompt() gets prompt and compiles with variables."""
+        mock_prompt = MagicMock()
+        mock_prompt.compile.return_value = "Hello Alice!"
+
+        mock_sdk = MagicMock()
+        mock_sdk.get_prompt.return_value = mock_prompt
+        client._sdk = mock_sdk
+
+        result = client.compile_prompt("greeting", {"name": "Alice"})
+
+        assert result == "Hello Alice!"
+        mock_sdk.get_prompt.assert_called_once_with("greeting")
+        mock_prompt.compile.assert_called_once_with(name="Alice")
+
+
+class TestDatasetRunMethods:
+    """Test dataset run REST methods."""
+
+    @respx.mock
+    def test_list_dataset_runs(self, client: LangfuseClient) -> None:
+        """Test list_dataset_runs() returns run list."""
+        mock_route = respx.get("https://test.langfuse.com/api/public/datasets/my-dataset/runs").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": [{"name": "run-1"}, {"name": "run-2"}]},
+            )
+        )
+
+        runs = client.list_dataset_runs("my-dataset")
+
+        assert len(runs) == 2
+        assert runs[0]["name"] == "run-1"
+        assert mock_route.called
+
+    @respx.mock
+    def test_list_dataset_runs_empty(self, client: LangfuseClient) -> None:
+        """Test list_dataset_runs() handles empty results."""
+        respx.get("https://test.langfuse.com/api/public/datasets/empty-dataset/runs").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": []},
+            )
+        )
+
+        runs = client.list_dataset_runs("empty-dataset")
+
+        assert runs == []
+
+    @respx.mock
+    def test_get_dataset_run(self, client: LangfuseClient) -> None:
+        """Test get_dataset_run() returns run data."""
+        mock_route = respx.get(
+            "https://test.langfuse.com/api/public/datasets/my-dataset/runs/run-1"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={"name": "run-1", "description": "baseline"},
+            )
+        )
+
+        run = client.get_dataset_run("my-dataset", "run-1")
+
+        assert run["name"] == "run-1"
+        assert run["description"] == "baseline"
+        assert mock_route.called
+
+    @respx.mock
+    def test_get_dataset_run_404(self, client: LangfuseClient) -> None:
+        """Test get_dataset_run() raises on 404."""
+        respx.get(
+            "https://test.langfuse.com/api/public/datasets/my-dataset/runs/missing"
+        ).mock(
+            return_value=httpx.Response(404, text="Not Found")
+        )
+
+        with pytest.raises(LangfuseAPIError) as exc_info:
+            client.get_dataset_run("my-dataset", "missing")
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.exit_code == NOT_FOUND
+
+
+class TestPaginateMidPageBreak:
+    """Test pagination edge case: limit breaks mid-page."""
+
+    @respx.mock
+    def test_paginate_breaks_mid_page(self, client: LangfuseClient) -> None:
+        """Test that _paginate() stops at limit even mid-page."""
+        page_data = [{"id": str(i)} for i in range(50)]
+
+        respx.get("https://test.langfuse.com/api/public/traces").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": page_data, "meta": {"totalItems": 200}},
+            )
+        )
+
+        items = list(client._paginate("/traces", {}, limit=3))
+
+        assert len(items) == 3
+        assert [item["id"] for item in items] == ["0", "1", "2"]
+
+
+class TestScoresTimestampFilter:
+    """Test scores to_timestamp filter specifically."""
+
+    @respx.mock
+    def test_list_scores_with_to_timestamp(self, client: LangfuseClient) -> None:
+        """Test list_scores() passes to_timestamp filter."""
+        mock_route = respx.get("https://test.langfuse.com/api/public/scores").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": [], "meta": {"totalItems": 0}},
+            )
+        )
+
+        to_ts = datetime(2024, 1, 31, 23, 59, 59, tzinfo=timezone.utc)
+        client.list_scores(limit=10, to_timestamp=to_ts)
+
+        assert mock_route.called
+        request = mock_route.calls.last.request
+        url_str = str(request.url)
+        assert "toTimestamp=2024-01-31T23%3A59%3A59%2B00%3A00" in url_str

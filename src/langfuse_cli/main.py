@@ -66,9 +66,10 @@ def main(
 
 
 # Import and register command groups
-from langfuse_cli.commands import datasets, experiments, prompts, scores, sessions, traces  # noqa: E402
+from langfuse_cli.commands import datasets, experiments, observations, prompts, scores, sessions, traces  # noqa: E402
 
 app.add_typer(traces.app, name="traces", help="Inspect traces and observations.")
+app.add_typer(observations.app, name="observations", help="Browse observations (generations, spans, events).")
 app.add_typer(prompts.app, name="prompts", help="Manage and inspect prompts.")
 app.add_typer(scores.app, name="scores", help="View scores and evaluations.")
 app.add_typer(datasets.app, name="datasets", help="Browse datasets.")
