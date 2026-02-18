@@ -159,6 +159,8 @@ class LangfuseClient:
         trace_id: str | None = None,
         observation_type: str | None = None,
         name: str | None = None,
+        from_timestamp: datetime | None = None,
+        to_timestamp: datetime | None = None,
     ) -> list[dict[str, Any]]:
         """List observations with optional filters."""
         params: dict[str, Any] = {}
@@ -168,6 +170,10 @@ class LangfuseClient:
             params["type"] = observation_type
         if name:
             params["name"] = name
+        if from_timestamp:
+            params["fromTimestamp"] = _iso_with_tz(from_timestamp)
+        if to_timestamp:
+            params["toTimestamp"] = _iso_with_tz(to_timestamp)
         return list(self._paginate("/observations", params, limit))
 
     # ── Sessions (REST) ───────────────────────────────────────────────────

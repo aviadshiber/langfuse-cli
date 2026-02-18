@@ -7,7 +7,7 @@
 
 Observability-first CLI for the [Langfuse](https://langfuse.com) LLM platform, following [gh-ux patterns](https://cli.github.com/manual/).
 
-**Features**: traces, prompts, scores, datasets, experiments, sessions | JSON/table/TSV output | config profiles | system keyring secrets | agent-friendly `--json` mode
+**Features**: traces, observations, prompts, scores, datasets, experiments, sessions | JSON/table/TSV output | config profiles | system keyring secrets | agent-friendly `--json` mode
 
 ## Installation
 
@@ -135,7 +135,7 @@ lf traces tree <trace-id>
 |------|------|-------------|
 | `--limit`, `-l` | INT | Max results (default: 50) |
 | `--user-id`, `-u` | TEXT | Filter by user ID |
-| `--session-id` | TEXT | Filter by session ID |
+| `--session-id`, `-s` | TEXT | Filter by session ID |
 | `--tags` | TEXT | Filter by tags (comma-separated) |
 | `--name`, `-n` | TEXT | Filter by trace name |
 | `--from` | DATETIME | Start time filter (ISO 8601) |
@@ -201,6 +201,28 @@ lf sessions list --limit 20 --from 2026-01-01
 lf sessions get session-abc-123
 ```
 
+### Observations
+
+```bash
+# List observations for a trace
+lf observations list --trace-id abc-123
+
+# Filter by type and name
+lf observations list --type GENERATION --name llm-call --limit 20
+
+# With time range
+lf observations list --trace-id abc-123 --from 2026-01-01 --to 2026-01-31
+```
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--limit`, `-l` | INT | Max results (default: 50) |
+| `--trace-id`, `-t` | TEXT | Filter by trace ID |
+| `--type` | TEXT | Filter by type (GENERATION, SPAN, EVENT) |
+| `--name`, `-n` | TEXT | Filter by observation name |
+| `--from` | DATETIME | Start time filter (ISO 8601) |
+| `--to` | DATETIME | End time filter (ISO 8601) |
+
 ## Output Modes
 
 | Context | Format | Status Messages |
@@ -243,6 +265,60 @@ Hybrid SDK + REST approach:
 - **REST (httpx)**: Traces, observations, scores, sessions — full filter control, 60s timeout
 - **SDK (langfuse)**: Prompts (built-in 300s caching), datasets, experiments — complex operations
 
+## Troubleshooting
+
+**Timeouts on large projects** — Use `--from` to limit the time range:
+```bash
+lf traces list --from 2026-02-01          # fast: scoped query
+lf traces list                             # slow: may timeout on large projects
+```
+
+**Datetime format** — `--from`/`--to` accept ISO 8601 without milliseconds or `Z` suffix:
+```bash
+lf traces list --from 2026-02-16                  # date only
+lf traces list --from 2026-02-16T10:30:00         # datetime
+lf traces list --from "2026-02-16 10:30:00"       # space separator (quote it)
+# NOT supported: 2026-02-16T10:30:00.213Z (ms + Z suffix)
+```
+
+**Authentication errors** — Verify credentials are set:
+```bash
+echo $LANGFUSE_PUBLIC_KEY   # should show pk-lf-...
+echo $LANGFUSE_SECRET_KEY   # should show sk-lf-...
+lf --json traces list --limit 1 --from 2026-02-01  # test connectivity
+```
+
+**Batch processing** — Use `--to` with the last timestamp to page through results:
+```bash
+# Batch 1
+RAW=$(lf --jq '.[-1].timestamp' traces list --limit 50 --from 2026-02-01 2>/dev/null)
+CURSOR=$(echo "$RAW" | tr -d '"' | sed 's/\.[0-9]*Z$//')
+
+# Batch 2 (older results)
+lf --json traces list --limit 50 --from 2026-02-01 --to "$CURSOR"
+```
+
+## Shell Completions
+
+`lf` supports tab completions for bash, zsh, and fish via Typer's built-in mechanism.
+
+**Bash** — add to `~/.bashrc`:
+```bash
+eval "$(_LF_COMPLETE=bash_source lf)"
+```
+
+**Zsh** — add to `~/.zshrc`:
+```bash
+eval "$(_LF_COMPLETE=zsh_source lf)"
+```
+
+**Fish** — add to `~/.config/fish/config.fish`:
+```fish
+_LF_COMPLETE=fish_source lf | source
+```
+
+After adding, restart your shell or source the config file.
+
 ## Development
 
 ```bash
@@ -250,11 +326,12 @@ Hybrid SDK + REST approach:
 git clone https://github.com/aviadshiber/langfuse-cli.git && cd langfuse-cli
 uv sync
 
-# Run tests (291 tests, ~97% coverage)
+# Run tests
 uv run pytest
 
-# Lint & type check
+# Lint, format & type check
 uv run ruff check src/ tests/
+uv run ruff format --check src/ tests/
 uv run mypy src/
 
 # Run locally

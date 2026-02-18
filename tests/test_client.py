@@ -406,6 +406,31 @@ class TestObservationsMethods:
         assert "type=GENERATION" in url_str
         assert "name=llm-call" in url_str
 
+    @respx.mock
+    def test_list_observations_with_timestamps(self, client: LangfuseClient) -> None:
+        """Test list_observations() passes timestamp filters."""
+        mock_route = respx.get("https://test.langfuse.com/api/public/observations").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": [], "meta": {"totalItems": 0}},
+            )
+        )
+
+        from_ts = datetime(2024, 1, 1, tzinfo=timezone.utc)
+        to_ts = datetime(2024, 1, 31, tzinfo=timezone.utc)
+
+        client.list_observations(
+            limit=30,
+            from_timestamp=from_ts,
+            to_timestamp=to_ts,
+        )
+
+        assert mock_route.called
+        request = mock_route.calls.last.request
+        url_str = str(request.url)
+        assert "fromTimestamp=2024-01-01T00%3A00%3A00%2B00%3A00" in url_str
+        assert "toTimestamp=2024-01-31T00%3A00%3A00%2B00%3A00" in url_str
+
 
 class TestDatasetMethods:
     """Test dataset-related methods."""

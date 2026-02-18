@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import typer
 
 from langfuse_cli.commands import command_context
@@ -15,6 +17,8 @@ def list_observations(
     trace_id: str | None = typer.Option(None, "--trace-id", "-t", help="Filter by trace ID."),
     observation_type: str | None = typer.Option(None, "--type", help="Filter by type (GENERATION, SPAN, EVENT)."),
     name: str | None = typer.Option(None, "--name", "-n", help="Filter by observation name."),
+    from_date: datetime | None = typer.Option(None, "--from", help="Start time filter (ISO 8601)."),
+    to_date: datetime | None = typer.Option(None, "--to", help="End time filter (ISO 8601)."),
 ) -> None:
     """List observations with optional filters."""
     with command_context("listing observations") as (client, output):
@@ -23,6 +27,8 @@ def list_observations(
             trace_id=trace_id,
             observation_type=observation_type,
             name=name,
+            from_timestamp=from_date,
+            to_timestamp=to_date,
         )
         output.render_table(
             observations,

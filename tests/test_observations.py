@@ -70,6 +70,8 @@ class TestObservationsListCommand:
             trace_id=None,
             observation_type=None,
             name=None,
+            from_timestamp=None,
+            to_timestamp=None,
         )
         mock_client.close.assert_called_once()
 
@@ -160,6 +162,30 @@ class TestObservationsListCommand:
         assert result.exit_code == NOT_FOUND
         mock_client.close.assert_called_once()
 
+    def test_list_observations_with_date_filters(self, mock_client: MagicMock) -> None:
+        """Test that date filters are passed correctly."""
+        from datetime import datetime
+
+        mock_client.list_observations.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(
+                app,
+                [
+                    "observations",
+                    "list",
+                    "--from",
+                    "2024-01-01T00:00:00",
+                    "--to",
+                    "2024-01-31T23:59:59",
+                ],
+            )
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.list_observations.call_args.kwargs
+        assert isinstance(call_kwargs["from_timestamp"], datetime)
+        assert isinstance(call_kwargs["to_timestamp"], datetime)
+
     def test_list_observations_empty_results(self, mock_client: MagicMock) -> None:
         """Test that empty results are handled gracefully."""
         mock_client.list_observations.return_value = []
@@ -228,3 +254,5 @@ class TestObservationsIntegration:
         assert "--trace-id" in stdout
         assert "--type" in stdout
         assert "--name" in stdout
+        assert "--from" in stdout
+        assert "--to" in stdout
