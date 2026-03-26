@@ -247,6 +247,35 @@ class LangfuseClient:
         prompt = self.get_prompt(name, **kwargs)
         return prompt.compile(**variables)
 
+    def get_prompt_history(self, name: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        """Get version history for a prompt (version, status, created_at, created_by)."""
+        data = self._get(f"/v2/prompts/{name}", {"limit": limit})
+        versions = data.get("data", [])
+        result = []
+        for v in versions:
+            labels = v.get("labels", [])
+            if "production" in labels:
+                status = "● production"
+            elif labels:
+                status = f"○ {labels[0]}"
+            else:
+                status = "○ archived"
+
+            created_by = v.get("createdBy")
+            if isinstance(created_by, dict):
+                created_by = created_by.get("name") or created_by.get("email") or str(created_by)
+
+            raw_ts = v.get("createdAt", "")
+            created_at = _format_ts(raw_ts) if raw_ts else ""
+
+            result.append({
+                "version": v.get("version"),
+                "status": status,
+                "created_at": created_at,
+                "created_by": created_by or "",
+            })
+        return result
+
     # ── Datasets (SDK) ────────────────────────────────────────────────────
 
     def list_datasets(self, *, limit: int = 50) -> list[dict[str, Any]]:
@@ -272,6 +301,14 @@ class LangfuseClient:
     def get_dataset_run(self, dataset_name: str, run_name: str) -> dict[str, Any]:
         """Get a specific dataset run."""
         return self._get(f"/datasets/{dataset_name}/runs/{run_name}")
+
+
+def _format_ts(ts: str) -> str:
+    """Format ISO 8601 timestamp to 'YYYY-MM-DD HH:MM UTC' for display."""
+    import re
+
+    ts = re.sub(r"\.\d+Z?$", "", ts).replace("T", " ")
+    return f"{ts[:16]} UTC" if len(ts) >= 16 else ts
 
 
 def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:
