@@ -303,12 +303,15 @@ class LangfuseClient:
         return self._get(f"/datasets/{dataset_name}/runs/{run_name}")
 
 
+_TS_PREFIX_LEN = 16  # "YYYY-MM-DD HH:MM"
+
+
 def _format_ts(ts: str) -> str:
     """Format ISO 8601 timestamp to 'YYYY-MM-DD HH:MM UTC' for display."""
     import re
 
     ts = re.sub(r"\.\d+Z?$", "", ts).replace("T", " ")
-    return f"{ts[:16]} UTC" if len(ts) >= 16 else ts
+    return f"{ts[:_TS_PREFIX_LEN]} UTC" if len(ts) >= _TS_PREFIX_LEN else ts
 
 
 def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:

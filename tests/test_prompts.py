@@ -408,8 +408,18 @@ class TestPromptHistory:
     def test_history_success(self, mock_client: MagicMock) -> None:
         """Table output with version rows, exit 0."""
         mock_client.get_prompt_history.return_value = [
-            {"version": 3, "status": "● production", "created_at": "2026-03-24 14:32 UTC", "created_by": "artem.stolov"},
-            {"version": 2, "status": "○ archived", "created_at": "2026-03-20 09:11 UTC", "created_by": "aviad.s"},
+            {
+                "version": 3,
+                "status": "● production",
+                "created_at": "2026-03-24 14:32 UTC",
+                "created_by": "artem.stolov",
+            },
+            {
+                "version": 2,
+                "status": "○ archived",
+                "created_at": "2026-03-20 09:11 UTC",
+                "created_by": "aviad.s",
+            },
         ]
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["prompts", "history", "my-prompt"])
