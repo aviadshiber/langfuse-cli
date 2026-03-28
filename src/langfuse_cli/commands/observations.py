@@ -6,6 +6,7 @@ from datetime import datetime
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -13,7 +14,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_observations(
-    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of results."),
+    limit: int = typer.Option(DEFAULT_LIMIT, "--limit", "-l", help="Maximum number of results."),
     trace_id: str | None = typer.Option(None, "--trace-id", "-t", help="Filter by trace ID."),
     observation_type: str | None = typer.Option(None, "--type", help="Filter by type (GENERATION, SPAN, EVENT)."),
     name: str | None = typer.Option(None, "--name", "-n", help="Filter by observation name."),

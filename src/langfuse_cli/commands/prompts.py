@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_HISTORY_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -115,7 +116,7 @@ def diff_prompts(
 @app.command("history")
 def history(
     name: str = typer.Argument(help="Prompt name."),
-    limit: int = typer.Option(20, "--limit", "-n", help="Max versions to show."),
+    limit: int = typer.Option(DEFAULT_HISTORY_LIMIT, "--limit", "-n", help="Max versions to show."),
 ) -> None:
     """Show version history for a prompt.
 

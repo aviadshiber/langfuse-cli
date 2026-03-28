@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -11,7 +12,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_datasets(
-    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of results."),
+    limit: int = typer.Option(DEFAULT_LIMIT, "--limit", "-l", help="Maximum number of results."),
 ) -> None:
     """List all datasets."""
     with command_context("listing datasets") as (client, output):
