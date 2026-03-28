@@ -6,6 +6,7 @@ from datetime import datetime
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -13,7 +14,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_sessions(
-    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of results."),
+    limit: int = typer.Option(DEFAULT_LIMIT, "--limit", "-l", help="Maximum number of results."),
     from_date: datetime | None = typer.Option(None, "--from", help="Start time filter (ISO 8601)."),
     to_date: datetime | None = typer.Option(None, "--to", help="End time filter (ISO 8601)."),
 ) -> None:

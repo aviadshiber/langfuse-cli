@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_HISTORY_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -110,3 +111,28 @@ def diff_prompts(
         from langfuse_cli.formatters.diff import render_diff
 
         render_diff(text1, text2, labels=(f"v{v1}", f"v{v2}"))
+
+
+@app.command("history")
+def history(
+    name: str = typer.Argument(help="Prompt name."),
+    limit: int = typer.Option(DEFAULT_HISTORY_LIMIT, "--limit", "-n", help="Max versions to show."),
+) -> None:
+    """Show version history for a prompt.
+
+    Displays each version with its status (production/archived), creation
+    time, and the user who created it.
+
+    EXAMPLES
+
+      $ lf prompts history my-prompt
+      $ lf prompts history my-prompt --limit 5
+      $ lf --json prompts history my-prompt
+      $ lf --json prompts history my-prompt | jq '.[0]'
+    """
+    with command_context("fetching prompt history") as (client, output):
+        versions = client.get_prompt_history(name, limit=limit)
+        output.render_table(
+            versions,
+            columns=["version", "status", "created_at", "created_by"],
+        )

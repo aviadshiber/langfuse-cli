@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
+from langfuse_cli._defaults import DEFAULT_HISTORY_LIMIT
 from langfuse_cli._exit_codes import ERROR, NOT_FOUND
 from langfuse_cli.client import LangfuseAPIError
 from langfuse_cli.main import app
@@ -396,4 +397,70 @@ class TestDiffPrompts:
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             runner.invoke(app, ["--json", "prompts", "diff", "test-prompt", "--v1", "1", "--v2", "2"])
 
+        mock_client.close.assert_called_once()
+
+
+# history command tests
+
+
+class TestPromptHistory:
+    """Test 'lf prompts history' command."""
+
+    def test_history_success(self, mock_client: MagicMock) -> None:
+        """Table output with version rows, exit 0."""
+        mock_client.get_prompt_history.return_value = [
+            {
+                "version": 3,
+                "status": "● production",
+                "created_at": "2026-03-24 14:32 UTC",
+                "created_by": "artem.stolov",
+            },
+            {
+                "version": 2,
+                "status": "○ archived",
+                "created_at": "2026-03-20 09:11 UTC",
+                "created_by": "aviad.s",
+            },
+        ]
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["prompts", "history", "my-prompt"])
+        assert result.exit_code == 0
+        mock_client.get_prompt_history.assert_called_once_with("my-prompt", limit=DEFAULT_HISTORY_LIMIT)
+
+    def test_history_limit(self, mock_client: MagicMock) -> None:
+        """--limit flag is passed through to client."""
+        mock_client.get_prompt_history.return_value = []
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            runner.invoke(app, ["prompts", "history", "my-prompt", "--limit", "5"])
+        mock_client.get_prompt_history.assert_called_once_with("my-prompt", limit=5)
+
+    def test_history_short_flag(self, mock_client: MagicMock) -> None:
+        """-n shorthand works identically to --limit."""
+        mock_client.get_prompt_history.return_value = []
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            runner.invoke(app, ["prompts", "history", "my-prompt", "-n", "3"])
+        mock_client.get_prompt_history.assert_called_once_with("my-prompt", limit=3)
+
+    def test_history_json(self, mock_client: MagicMock) -> None:
+        """--json flag outputs a JSON array."""
+        mock_client.get_prompt_history.return_value = [
+            {"version": 1, "status": "● production", "created_at": "2026-03-24 14:32 UTC", "created_by": "aviad.s"},
+        ]
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["--json", "prompts", "history", "my-prompt"])
+        assert result.exit_code == 0
+        assert '"version"' in result.output
+
+    def test_history_api_error(self, mock_client: MagicMock) -> None:
+        """API errors propagate as non-zero exit."""
+        mock_client.get_prompt_history.side_effect = LangfuseAPIError("not found", status_code=404, exit_code=NOT_FOUND)
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["prompts", "history", "my-prompt"])
+        assert result.exit_code == NOT_FOUND
+
+    def test_history_calls_close(self, mock_client: MagicMock) -> None:
+        """Client is always closed after the command."""
+        mock_client.get_prompt_history.return_value = []
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            runner.invoke(app, ["prompts", "history", "my-prompt"])
         mock_client.close.assert_called_once()
