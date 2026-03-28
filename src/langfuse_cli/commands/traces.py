@@ -6,6 +6,7 @@ from datetime import datetime
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_LIMIT, TREE_OBSERVATION_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -13,7 +14,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_traces(
-    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of results."),
+    limit: int = typer.Option(DEFAULT_LIMIT, "--limit", "-l", help="Maximum number of results."),
     user_id: str | None = typer.Option(None, "--user-id", "-u", help="Filter by user ID."),
     session_id: str | None = typer.Option(None, "--session-id", "-s", help="Filter by session ID."),
     tags: str | None = typer.Option(None, "--tags", help="Filter by tags (comma-separated)."),
@@ -68,7 +69,7 @@ def tree_trace(
     """Display trace hierarchy as a tree of spans, generations, and events."""
     with command_context("building trace tree") as (client, output):
         trace = client.get_trace(trace_id)
-        observations = client.list_observations(trace_id=trace_id, limit=200)
+        observations = client.list_observations(trace_id=trace_id, limit=TREE_OBSERVATION_LIMIT)
 
         if output.is_json_mode:
             output.render_json({"trace": trace, "observations": observations})
