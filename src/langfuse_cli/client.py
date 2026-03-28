@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from typing import Any
@@ -248,11 +249,26 @@ class LangfuseClient:
         return prompt.compile(**variables)
 
     def get_prompt_history(self, name: str, *, limit: int = 20) -> list[dict[str, Any]]:
-        """Get version history for a prompt (version, status, created_at, created_by)."""
-        data = self._get(f"/v2/prompts/{name}", {"limit": limit})
-        versions = data.get("data", [])
+        """Get version history for a prompt (version, status, created_at, created_by).
+
+        The Langfuse REST API returns one version at a time; we first fetch the
+        latest to learn the max version number, then fetch each version in
+        descending order up to `limit`.
+        """
+        encoded = urllib.parse.quote(name, safe="")
+        latest = self._get(f"/v2/prompts/{encoded}")
+        max_version: int = latest.get("version", 1)
+
         result = []
-        for v in versions:
+        v_num = max_version
+        while v_num >= 1 and len(result) < limit:
+            try:
+                v = self._get(f"/v2/prompts/{encoded}", {"version": v_num})
+            except LangfuseAPIError as e:
+                if e.status_code == HTTP_NOT_FOUND:
+                    v_num -= 1
+                    continue
+                raise
             labels = v.get("labels", [])
             if "production" in labels:
                 status = "● production"
@@ -261,21 +277,16 @@ class LangfuseClient:
             else:
                 status = "○ archived"
 
-            created_by = v.get("createdBy")
-            if isinstance(created_by, dict):
-                created_by = created_by.get("name") or created_by.get("email") or str(created_by)
-
             raw_ts = v.get("createdAt", "")
-            created_at = _format_ts(raw_ts) if raw_ts else ""
-
             result.append(
                 {
-                    "version": v.get("version"),
+                    "version": v_num,
                     "status": status,
-                    "created_at": created_at,
-                    "created_by": created_by or "",
+                    "created_at": _format_ts(raw_ts) if raw_ts else "",
+                    "created_by": v.get("createdBy") or "",
                 }
             )
+            v_num -= 1
         return result
 
     # ── Datasets (SDK) ────────────────────────────────────────────────────
