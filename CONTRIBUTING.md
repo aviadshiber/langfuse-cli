@@ -19,6 +19,9 @@ cd langfuse-cli
 # Install dependencies
 uv sync
 
+# Install the pre-push hook (mirrors CI exactly — run once)
+ln -sf ../../scripts/pre-push .git/hooks/pre-push
+
 # Run tests
 uv run pytest
 

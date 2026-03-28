@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import re
+import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from typing import Any
@@ -10,6 +12,7 @@ from typing import Any
 import httpx
 
 from langfuse_cli import __version__
+from langfuse_cli._defaults import DEFAULT_HISTORY_LIMIT, DEFAULT_LIMIT
 from langfuse_cli._exit_codes import ERROR, HTTP_NOT_FOUND, NOT_FOUND
 from langfuse_cli.config import LangfuseConfig
 
@@ -122,7 +125,7 @@ class LangfuseClient:
     def list_traces(
         self,
         *,
-        limit: int = 50,
+        limit: int = DEFAULT_LIMIT,
         user_id: str | None = None,
         session_id: str | None = None,
         tags: list[str] | None = None,
@@ -155,7 +158,7 @@ class LangfuseClient:
     def list_observations(
         self,
         *,
-        limit: int = 50,
+        limit: int = DEFAULT_LIMIT,
         trace_id: str | None = None,
         observation_type: str | None = None,
         name: str | None = None,
@@ -181,7 +184,7 @@ class LangfuseClient:
     def list_sessions(
         self,
         *,
-        limit: int = 50,
+        limit: int = DEFAULT_LIMIT,
         from_timestamp: datetime | None = None,
         to_timestamp: datetime | None = None,
     ) -> list[dict[str, Any]]:
@@ -202,7 +205,7 @@ class LangfuseClient:
     def list_scores(
         self,
         *,
-        limit: int = 50,
+        limit: int = DEFAULT_LIMIT,
         trace_id: str | None = None,
         name: str | None = None,
         from_timestamp: datetime | None = None,
@@ -247,9 +250,51 @@ class LangfuseClient:
         prompt = self.get_prompt(name, **kwargs)
         return prompt.compile(**variables)
 
+    def _iter_prompt_history(self, name: str, *, limit: int) -> Iterator[dict[str, Any]]:
+        """Yield version history entries for a prompt in descending version order.
+
+        The Langfuse REST API returns one version at a time; we first fetch the
+        latest to learn the max version number, then yield each version in
+        descending order up to `limit`, skipping gaps from deleted versions.
+        This results in up to limit+1 API calls (1 HEAD + 1 per version).
+        """
+        encoded = urllib.parse.quote(name, safe="")
+        latest = self._get(f"/v2/prompts/{encoded}")
+        max_version: int = latest.get("version", 1)
+        yielded = 0
+        v_num = max_version
+        while v_num >= 1 and yielded < limit:
+            try:
+                v = self._get(f"/v2/prompts/{encoded}", {"version": v_num})
+            except LangfuseAPIError as e:
+                if e.status_code == HTTP_NOT_FOUND:
+                    v_num -= 1
+                    continue
+                raise
+            labels = v.get("labels", [])
+            if "production" in labels:
+                status = "● production"
+            elif labels:
+                status = f"○ {labels[0]}"
+            else:
+                status = "○ archived"
+            raw_ts = v.get("createdAt", "")
+            yield {
+                "version": v_num,
+                "status": status,
+                "created_at": _format_ts(raw_ts) if raw_ts else "",
+                "created_by": _extract_created_by(v.get("createdBy")),
+            }
+            yielded += 1
+            v_num -= 1
+
+    def get_prompt_history(self, name: str, *, limit: int = DEFAULT_HISTORY_LIMIT) -> list[dict[str, Any]]:
+        """Get version history for a prompt (version, status, created_at, created_by)."""
+        return list(self._iter_prompt_history(name, limit=limit))
+
     # ── Datasets (SDK) ────────────────────────────────────────────────────
 
-    def list_datasets(self, *, limit: int = 50) -> list[dict[str, Any]]:
+    def list_datasets(self, *, limit: int = DEFAULT_LIMIT) -> list[dict[str, Any]]:
         """List datasets."""
         data = self._get("/v2/datasets", {"limit": limit})
         result: list[dict[str, Any]] = data.get("data", [])
@@ -259,7 +304,7 @@ class LangfuseClient:
         """Get a dataset by name."""
         return self._get(f"/v2/datasets/{name}")
 
-    def list_dataset_items(self, dataset_name: str, *, limit: int = 50) -> list[dict[str, Any]]:
+    def list_dataset_items(self, dataset_name: str, *, limit: int = DEFAULT_LIMIT) -> list[dict[str, Any]]:
         """List items in a dataset."""
         return list(self._paginate("/dataset-items", {"datasetName": dataset_name}, limit))
 
@@ -272,6 +317,22 @@ class LangfuseClient:
     def get_dataset_run(self, dataset_name: str, run_name: str) -> dict[str, Any]:
         """Get a specific dataset run."""
         return self._get(f"/datasets/{dataset_name}/runs/{run_name}")
+
+
+_TS_PREFIX_LEN = 16  # "YYYY-MM-DD HH:MM"
+
+
+def _format_ts(ts: str) -> str:
+    """Format ISO 8601 timestamp to 'YYYY-MM-DD HH:MM UTC' for display."""
+    ts = re.sub(r"\.\d+Z?$", "", ts).replace("T", " ")
+    return f"{ts[:_TS_PREFIX_LEN]} UTC" if len(ts) >= _TS_PREFIX_LEN else ts
+
+
+def _extract_created_by(value: Any) -> str:
+    """Normalise the createdBy field which may be a string ID or a dict."""
+    if isinstance(value, dict):
+        return str(value.get("name") or value.get("email") or value.get("id") or "")
+    return str(value) if value else ""
 
 
 def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:

@@ -7,6 +7,7 @@ from datetime import datetime
 
 import typer
 
+from langfuse_cli._defaults import DEFAULT_LIMIT, SUMMARY_FETCH_LIMIT
 from langfuse_cli.commands import command_context
 
 app = typer.Typer(no_args_is_help=True)
@@ -14,7 +15,7 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command("list")
 def list_scores(
-    limit: int = typer.Option(50, "--limit", "-l", help="Maximum number of results."),
+    limit: int = typer.Option(DEFAULT_LIMIT, "--limit", "-l", help="Maximum number of results."),
     trace_id: str | None = typer.Option(None, "--trace-id", "-t", help="Filter by trace ID."),
     name: str | None = typer.Option(None, "--name", "-n", help="Filter by score name."),
     from_date: datetime | None = typer.Option(None, "--from", help="Start time filter (ISO 8601)."),
@@ -44,7 +45,7 @@ def summary_scores(
     """Show aggregated score statistics."""
     with command_context("summarizing scores") as (client, output):
         scores = client.list_scores(
-            limit=500,
+            limit=SUMMARY_FETCH_LIMIT,
             name=name,
             from_timestamp=from_date,
             to_timestamp=to_date,
