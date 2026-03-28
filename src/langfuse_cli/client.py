@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import urllib.parse
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -253,7 +254,8 @@ class LangfuseClient:
 
         The Langfuse REST API returns one version at a time; we first fetch the
         latest to learn the max version number, then fetch each version in
-        descending order up to `limit`.
+        descending order up to `limit`.  This results in up to limit+1 API
+        calls (1 HEAD request + 1 per version, skipping gaps from deletions).
         """
         encoded = urllib.parse.quote(name, safe="")
         latest = self._get(f"/v2/prompts/{encoded}")
@@ -283,7 +285,7 @@ class LangfuseClient:
                     "version": v_num,
                     "status": status,
                     "created_at": _format_ts(raw_ts) if raw_ts else "",
-                    "created_by": v.get("createdBy") or "",
+                    "created_by": _extract_created_by(v.get("createdBy")),
                 }
             )
             v_num -= 1
@@ -321,10 +323,15 @@ _TS_PREFIX_LEN = 16  # "YYYY-MM-DD HH:MM"
 
 def _format_ts(ts: str) -> str:
     """Format ISO 8601 timestamp to 'YYYY-MM-DD HH:MM UTC' for display."""
-    import re
-
     ts = re.sub(r"\.\d+Z?$", "", ts).replace("T", " ")
     return f"{ts[:_TS_PREFIX_LEN]} UTC" if len(ts) >= _TS_PREFIX_LEN else ts
+
+
+def _extract_created_by(value: Any) -> str:
+    """Normalise the createdBy field which may be a string ID or a dict."""
+    if isinstance(value, dict):
+        return str(value.get("name") or value.get("email") or value.get("id") or "")
+    return str(value) if value else ""
 
 
 def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:
