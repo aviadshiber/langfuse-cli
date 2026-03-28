@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
+from langfuse_cli._defaults import DEFAULT_HISTORY_LIMIT
 from langfuse_cli._exit_codes import ERROR, NOT_FOUND
 from langfuse_cli.client import LangfuseAPIError
 from langfuse_cli.main import app
@@ -424,7 +425,7 @@ class TestPromptHistory:
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["prompts", "history", "my-prompt"])
         assert result.exit_code == 0
-        mock_client.get_prompt_history.assert_called_once_with("my-prompt", limit=20)
+        mock_client.get_prompt_history.assert_called_once_with("my-prompt", limit=DEFAULT_HISTORY_LIMIT)
 
     def test_history_limit(self, mock_client: MagicMock) -> None:
         """--limit flag is passed through to client."""
