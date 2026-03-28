@@ -259,7 +259,7 @@ class LangfuseClient:
         latest = self._get(f"/v2/prompts/{encoded}")
         max_version: int = latest.get("version", 1)
 
-        result = []
+        result: list[dict[str, Any]] = []
         v_num = max_version
         while v_num >= 1 and len(result) < limit:
             try:
