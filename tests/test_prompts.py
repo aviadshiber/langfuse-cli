@@ -452,9 +452,7 @@ class TestPromptHistory:
 
     def test_history_api_error(self, mock_client: MagicMock) -> None:
         """API errors propagate as non-zero exit."""
-        mock_client.get_prompt_history.side_effect = LangfuseAPIError(
-            "not found", status_code=404, exit_code=NOT_FOUND
-        )
+        mock_client.get_prompt_history.side_effect = LangfuseAPIError("not found", status_code=404, exit_code=NOT_FOUND)
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
             result = runner.invoke(app, ["prompts", "history", "my-prompt"])
         assert result.exit_code == NOT_FOUND

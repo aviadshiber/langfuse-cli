@@ -268,12 +268,14 @@ class LangfuseClient:
             raw_ts = v.get("createdAt", "")
             created_at = _format_ts(raw_ts) if raw_ts else ""
 
-            result.append({
-                "version": v.get("version"),
-                "status": status,
-                "created_at": created_at,
-                "created_by": created_by or "",
-            })
+            result.append(
+                {
+                    "version": v.get("version"),
+                    "status": status,
+                    "created_at": created_at,
+                    "created_by": created_by or "",
+                }
+            )
         return result
 
     # ── Datasets (SDK) ────────────────────────────────────────────────────
