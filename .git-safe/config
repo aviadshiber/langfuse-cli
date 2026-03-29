@@ -1,0 +1,23 @@
+[core]
+    repositoryformatversion = 0
+    filemode = true
+    bare = false
+    # No fsmonitor, no hooks path, no credential helper
+[user]
+    name = Kapsis Agent f91cf4
+    email = kapsis-agent-f91cf4@localhost
+[init]
+    defaultBranch = main
+[receive]
+    denyCurrentBranch = updateInstead
+[remote "origin"]
+    url = https://github.com/aviadshiber/langfuse-cli.git
+    fetch = +refs/heads/*:refs/remotes/origin/*
+[transfer]
+    fsckObjects = true
+[fetch]
+    fsckObjects = true
+[receive]
+    fsckObjects = true
+[safe]
+    directory = /workspace

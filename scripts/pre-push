@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# pre-push hook — mirrors CI checks exactly.
+# Install: ln -sf ../../scripts/pre-push .git/hooks/pre-push
+set -e
+
+echo "▶ ruff check..."
+uv run ruff check src/ tests/
+
+echo "▶ ruff format --check..."
+uv run ruff format --check src/ tests/
+
+echo "▶ mypy..."
+uv run mypy src/
+
+echo "▶ pytest..."
+uv run pytest -q
+
+echo "✓ all checks passed"
