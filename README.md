@@ -123,6 +123,7 @@ lf --quiet scores summary             # correct
 lf traces list --limit 10 --from 2026-02-01
 lf traces list --user-id user-123 --session-id sess-456
 lf traces list --tags production,v2 --name chat-completion
+lf traces list --metadata tenant=acme --metadata env=prod
 
 # Get a single trace
 lf traces get <trace-id>
@@ -140,6 +141,7 @@ lf traces tree <trace-id>
 | `--name`, `-n` | TEXT | Filter by trace name |
 | `--from` | DATETIME | Start time filter (ISO 8601) |
 | `--to` | DATETIME | End time filter (ISO 8601) |
+| `--metadata` | TEXT | Filter by metadata field as `KEY=VALUE` (repeatable; ANDed) |
 
 ### Prompts
 
@@ -212,6 +214,9 @@ lf observations list --type GENERATION --name llm-call --limit 20
 
 # With time range
 lf observations list --trace-id abc-123 --from 2026-01-01 --to 2026-01-31
+
+# Filter by metadata
+lf observations list --metadata tenant=acme
 ```
 
 | Flag | Type | Description |
@@ -222,6 +227,7 @@ lf observations list --trace-id abc-123 --from 2026-01-01 --to 2026-01-31
 | `--name`, `-n` | TEXT | Filter by observation name |
 | `--from` | DATETIME | Start time filter (ISO 8601) |
 | `--to` | DATETIME | End time filter (ISO 8601) |
+| `--metadata` | TEXT | Filter by metadata field as `KEY=VALUE` (repeatable; ANDed) |
 
 ## Output Modes
 
