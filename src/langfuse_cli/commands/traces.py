@@ -8,6 +8,7 @@ import typer
 
 from langfuse_cli._defaults import DEFAULT_LIMIT, TREE_OBSERVATION_LIMIT
 from langfuse_cli.commands import command_context
+from langfuse_cli.commands._parsers import parse_metadata
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -21,6 +22,11 @@ def list_traces(
     name: str | None = typer.Option(None, "--name", "-n", help="Filter by trace name."),
     from_date: datetime | None = typer.Option(None, "--from", help="Start time filter (ISO 8601)."),
     to_date: datetime | None = typer.Option(None, "--to", help="End time filter (ISO 8601)."),
+    metadata: list[str] | None = typer.Option(
+        None,
+        "--metadata",
+        help="Filter by metadata field, e.g. tenant=acme. Can be specified multiple times; all conditions must match.",
+    ),
 ) -> None:
     """List traces with optional filters."""
     with command_context("listing traces") as (client, output):
@@ -32,6 +38,7 @@ def list_traces(
             from_timestamp=from_date,
             to_timestamp=to_date,
             name=name,
+            metadata=parse_metadata(metadata),
         )
         output.render_table(
             traces,
