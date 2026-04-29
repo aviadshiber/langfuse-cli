@@ -154,12 +154,13 @@ class TestObservationsListCommand:
         call_kwargs = mock_client.list_observations.call_args.kwargs
         assert call_kwargs["metadata"] == [("tenant", "acme"), ("env", "prod")]
 
-    def test_list_observations_metadata_invalid_format(self, mock_client: MagicMock) -> None:
-        """Test that --metadata without '=' exits with a usage error."""
+    @pytest.mark.parametrize("bad_value", ["no-equals", "=value-only", "key="])
+    def test_list_observations_metadata_invalid_format(self, mock_client: MagicMock, bad_value: str) -> None:
+        """Test that malformed --metadata (no '=', empty key, empty value) exits non-zero."""
         mock_client.list_observations.return_value = []
 
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
-            result = runner.invoke(app, ["observations", "list", "--metadata", "no-equals"])
+            result = runner.invoke(app, ["observations", "list", "--metadata", bad_value])
 
         assert result.exit_code != 0
         mock_client.list_observations.assert_not_called()

@@ -350,7 +350,11 @@ def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def _build_metadata_filter(pairs: list[tuple[str, str]]) -> str:
-    """Build a JSON-encoded v3 filter for metadata KEY=VALUE pairs (ANDed)."""
+    """Build a JSON-encoded v3 filter for metadata KEY=VALUE pairs (ANDed).
+
+    Always emits operator '=' with type 'stringObject'. Values are matched as
+    strings; non-string metadata fields on the server side won't match.
+    """
     return json.dumps(
         [{"column": "metadata", "type": "stringObject", "operator": "=", "key": k, "value": v} for k, v in pairs]
     )

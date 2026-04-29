@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any, ClassVar
 from unittest.mock import MagicMock, patch
@@ -299,7 +300,6 @@ class TestTracesMethods:
     @respx.mock
     def test_list_traces_with_metadata_filter(self, client: LangfuseClient) -> None:
         """Test list_traces() encodes metadata pairs into the v3 'filter' param."""
-        import json as _json
 
         mock_route = respx.get("https://test.langfuse.com/api/public/traces").mock(
             return_value=httpx.Response(200, json={"data": [], "meta": {"totalItems": 0}})
@@ -311,7 +311,7 @@ class TestTracesMethods:
         request = mock_route.calls.last.request
         filter_param = request.url.params.get("filter")
         assert filter_param is not None
-        decoded = _json.loads(filter_param)
+        decoded = json.loads(filter_param)
         assert decoded == [
             {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
             {"column": "metadata", "type": "stringObject", "operator": "=", "key": "env", "value": "prod"},
@@ -449,7 +449,6 @@ class TestObservationsMethods:
     @respx.mock
     def test_list_observations_with_metadata_filter(self, client: LangfuseClient) -> None:
         """Test list_observations() encodes metadata pairs into the v3 'filter' param."""
-        import json as _json
 
         mock_route = respx.get("https://test.langfuse.com/api/public/observations").mock(
             return_value=httpx.Response(200, json={"data": [], "meta": {"totalItems": 0}})
@@ -461,7 +460,7 @@ class TestObservationsMethods:
         request = mock_route.calls.last.request
         filter_param = request.url.params.get("filter")
         assert filter_param is not None
-        decoded = _json.loads(filter_param)
+        decoded = json.loads(filter_param)
         assert decoded == [
             {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
         ]
@@ -631,18 +630,16 @@ class TestBuildMetadataFilter:
     """Test _build_metadata_filter() helper."""
 
     def test_single_pair(self) -> None:
-        import json as _json
 
         result = _build_metadata_filter([("tenant", "acme")])
-        assert _json.loads(result) == [
+        assert json.loads(result) == [
             {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
         ]
 
     def test_multiple_pairs_preserve_order(self) -> None:
-        import json as _json
 
         result = _build_metadata_filter([("a", "1"), ("b", "2")])
-        decoded = _json.loads(result)
+        decoded = json.loads(result)
         assert [(d["key"], d["value"]) for d in decoded] == [("a", "1"), ("b", "2")]
 
 

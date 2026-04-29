@@ -7,7 +7,8 @@ from datetime import datetime
 import typer
 
 from langfuse_cli._defaults import DEFAULT_LIMIT
-from langfuse_cli.commands import command_context, parse_metadata
+from langfuse_cli.commands import command_context
+from langfuse_cli.commands._parsers import parse_metadata
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -21,7 +22,9 @@ def list_observations(
     from_date: datetime | None = typer.Option(None, "--from", help="Start time filter (ISO 8601)."),
     to_date: datetime | None = typer.Option(None, "--to", help="End time filter (ISO 8601)."),
     metadata: list[str] | None = typer.Option(
-        None, "--metadata", help="Filter by metadata field as KEY=VALUE. Repeatable; ANDed."
+        None,
+        "--metadata",
+        help="Filter by metadata field, e.g. tenant=acme. Can be specified multiple times; all conditions must match.",
     ),
 ) -> None:
     """List observations with optional filters."""

@@ -213,15 +213,27 @@ class TestTracesListCommand:
         call_kwargs = mock_client.list_traces.call_args.kwargs
         assert call_kwargs["metadata"] == [("expr", "a=b")]
 
-    def test_list_traces_metadata_invalid_format(self, mock_client: MagicMock) -> None:
-        """Test that --metadata without '=' exits with a usage error."""
+    @pytest.mark.parametrize("bad_value", ["no-equals", "=value-only", "key=", "  =value"])
+    def test_list_traces_metadata_invalid_format(self, mock_client: MagicMock, bad_value: str) -> None:
+        """Test that malformed --metadata (no '=', empty key, empty value) exits non-zero."""
         mock_client.list_traces.return_value = []
 
         with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
-            result = runner.invoke(app, ["traces", "list", "--metadata", "no-equals"])
+            result = runner.invoke(app, ["traces", "list", "--metadata", bad_value])
 
         assert result.exit_code != 0
         mock_client.list_traces.assert_not_called()
+
+    def test_list_traces_metadata_strips_key_whitespace(self, mock_client: MagicMock) -> None:
+        """Test that surrounding whitespace on the key is stripped."""
+        mock_client.list_traces.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["traces", "list", "--metadata", "  tenant  =acme"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.list_traces.call_args.kwargs
+        assert call_kwargs["metadata"] == [("tenant", "acme")]
 
     def test_list_traces_with_date_filters(self, mock_client: MagicMock) -> None:
         """Test that date filters are passed correctly."""
