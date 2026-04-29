@@ -72,6 +72,7 @@ class TestObservationsListCommand:
             name=None,
             from_timestamp=None,
             to_timestamp=None,
+            metadata=None,
         )
         mock_client.close.assert_called_once()
 
@@ -131,6 +132,37 @@ class TestObservationsListCommand:
         assert result.exit_code == 0
         call_kwargs = mock_client.list_observations.call_args.kwargs
         assert call_kwargs["name"] == "llm-call"
+
+    def test_list_observations_with_metadata_filter(self, mock_client: MagicMock) -> None:
+        """Test that repeatable --metadata KEY=VALUE flags are parsed and forwarded."""
+        mock_client.list_observations.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(
+                app,
+                [
+                    "observations",
+                    "list",
+                    "--metadata",
+                    "tenant=acme",
+                    "--metadata",
+                    "env=prod",
+                ],
+            )
+
+        assert result.exit_code == 0
+        call_kwargs = mock_client.list_observations.call_args.kwargs
+        assert call_kwargs["metadata"] == [("tenant", "acme"), ("env", "prod")]
+
+    def test_list_observations_metadata_invalid_format(self, mock_client: MagicMock) -> None:
+        """Test that --metadata without '=' exits with a usage error."""
+        mock_client.list_observations.return_value = []
+
+        with patch("langfuse_cli.commands.LangfuseClient", return_value=mock_client):
+            result = runner.invoke(app, ["observations", "list", "--metadata", "no-equals"])
+
+        assert result.exit_code != 0
+        mock_client.list_observations.assert_not_called()
 
     def test_list_observations_api_error_exits_with_code(self, mock_client: MagicMock) -> None:
         """Test that API errors produce correct exit codes."""

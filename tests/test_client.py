@@ -11,7 +11,14 @@ import pytest
 import respx
 
 from langfuse_cli._exit_codes import ERROR, NOT_FOUND
-from langfuse_cli.client import LangfuseAPIError, LangfuseClient, _clean_params, _iso_with_tz, _prompt_to_dict
+from langfuse_cli.client import (
+    LangfuseAPIError,
+    LangfuseClient,
+    _build_metadata_filter,
+    _clean_params,
+    _iso_with_tz,
+    _prompt_to_dict,
+)
 from langfuse_cli.config import LangfuseConfig
 
 
@@ -290,6 +297,39 @@ class TestTracesMethods:
         assert "toTimestamp=2024-01-31T23%3A59%3A59%2B00%3A00" in url_str
 
     @respx.mock
+    def test_list_traces_with_metadata_filter(self, client: LangfuseClient) -> None:
+        """Test list_traces() encodes metadata pairs into the v3 'filter' param."""
+        import json as _json
+
+        mock_route = respx.get("https://test.langfuse.com/api/public/traces").mock(
+            return_value=httpx.Response(200, json={"data": [], "meta": {"totalItems": 0}})
+        )
+
+        client.list_traces(limit=10, metadata=[("tenant", "acme"), ("env", "prod")])
+
+        assert mock_route.called
+        request = mock_route.calls.last.request
+        filter_param = request.url.params.get("filter")
+        assert filter_param is not None
+        decoded = _json.loads(filter_param)
+        assert decoded == [
+            {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
+            {"column": "metadata", "type": "stringObject", "operator": "=", "key": "env", "value": "prod"},
+        ]
+
+    @respx.mock
+    def test_list_traces_without_metadata_omits_filter_param(self, client: LangfuseClient) -> None:
+        """Test list_traces() does not send 'filter' query param when metadata is None."""
+        mock_route = respx.get("https://test.langfuse.com/api/public/traces").mock(
+            return_value=httpx.Response(200, json={"data": [], "meta": {"totalItems": 0}})
+        )
+
+        client.list_traces(limit=10)
+
+        assert mock_route.called
+        assert "filter" not in mock_route.calls.last.request.url.params
+
+    @respx.mock
     def test_get_trace(self, client: LangfuseClient) -> None:
         """Test get_trace() calls correct endpoint."""
         mock_route = respx.get("https://test.langfuse.com/api/public/traces/trace-123").mock(
@@ -405,6 +445,26 @@ class TestObservationsMethods:
         assert "traceId=trace-123" in url_str
         assert "type=GENERATION" in url_str
         assert "name=llm-call" in url_str
+
+    @respx.mock
+    def test_list_observations_with_metadata_filter(self, client: LangfuseClient) -> None:
+        """Test list_observations() encodes metadata pairs into the v3 'filter' param."""
+        import json as _json
+
+        mock_route = respx.get("https://test.langfuse.com/api/public/observations").mock(
+            return_value=httpx.Response(200, json={"data": [], "meta": {"totalItems": 0}})
+        )
+
+        client.list_observations(limit=10, metadata=[("tenant", "acme")])
+
+        assert mock_route.called
+        request = mock_route.calls.last.request
+        filter_param = request.url.params.get("filter")
+        assert filter_param is not None
+        decoded = _json.loads(filter_param)
+        assert decoded == [
+            {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
+        ]
 
     @respx.mock
     def test_list_observations_with_timestamps(self, client: LangfuseClient) -> None:
@@ -565,6 +625,25 @@ class TestIsoWithTz:
         dt = datetime(2026, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
         result = _iso_with_tz(dt)
         assert result == "2026-01-15T10:30:00+00:00"
+
+
+class TestBuildMetadataFilter:
+    """Test _build_metadata_filter() helper."""
+
+    def test_single_pair(self) -> None:
+        import json as _json
+
+        result = _build_metadata_filter([("tenant", "acme")])
+        assert _json.loads(result) == [
+            {"column": "metadata", "type": "stringObject", "operator": "=", "key": "tenant", "value": "acme"},
+        ]
+
+    def test_multiple_pairs_preserve_order(self) -> None:
+        import json as _json
+
+        result = _build_metadata_filter([("a", "1"), ("b", "2")])
+        decoded = _json.loads(result)
+        assert [(d["key"], d["value"]) for d in decoded] == [("a", "1"), ("b", "2")]
 
 
 class TestSDKProperty:

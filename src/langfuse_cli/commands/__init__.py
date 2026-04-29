@@ -14,6 +14,26 @@ if TYPE_CHECKING:
     from langfuse_cli.output import OutputContext
 
 
+def parse_metadata(items: list[str] | None) -> list[tuple[str, str]] | None:
+    """Parse repeatable --metadata KEY=VALUE flags into (key, value) tuples.
+
+    Splits on the first '=' so values may contain '='. Raises typer.BadParameter
+    on missing '=' or empty key.
+    """
+    if not items:
+        return None
+    pairs: list[tuple[str, str]] = []
+    for raw in items:
+        key, sep, value = raw.partition("=")
+        if not sep or not key:
+            raise typer.BadParameter(
+                f"--metadata expects KEY=VALUE (got {raw!r})",
+                param_hint="--metadata",
+            )
+        pairs.append((key, value))
+    return pairs
+
+
 @contextmanager
 def command_context(
     operation: str = "",

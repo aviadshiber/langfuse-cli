@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import urllib.parse
@@ -132,6 +133,7 @@ class LangfuseClient:
         from_timestamp: datetime | None = None,
         to_timestamp: datetime | None = None,
         name: str | None = None,
+        metadata: list[tuple[str, str]] | None = None,
     ) -> list[dict[str, Any]]:
         """List traces with optional filters."""
         params: dict[str, Any] = {}
@@ -147,6 +149,8 @@ class LangfuseClient:
             params["toTimestamp"] = _iso_with_tz(to_timestamp)
         if name:
             params["name"] = name
+        if metadata:
+            params["filter"] = _build_metadata_filter(metadata)
         return list(self._paginate("/traces", params, limit))
 
     def get_trace(self, trace_id: str) -> dict[str, Any]:
@@ -164,6 +168,7 @@ class LangfuseClient:
         name: str | None = None,
         from_timestamp: datetime | None = None,
         to_timestamp: datetime | None = None,
+        metadata: list[tuple[str, str]] | None = None,
     ) -> list[dict[str, Any]]:
         """List observations with optional filters."""
         params: dict[str, Any] = {}
@@ -177,6 +182,8 @@ class LangfuseClient:
             params["fromTimestamp"] = _iso_with_tz(from_timestamp)
         if to_timestamp:
             params["toTimestamp"] = _iso_with_tz(to_timestamp)
+        if metadata:
+            params["filter"] = _build_metadata_filter(metadata)
         return list(self._paginate("/observations", params, limit))
 
     # ── Sessions (REST) ───────────────────────────────────────────────────
@@ -340,6 +347,13 @@ def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:
     if params is None:
         return {}
     return {k: v for k, v in params.items() if v is not None}
+
+
+def _build_metadata_filter(pairs: list[tuple[str, str]]) -> str:
+    """Build a JSON-encoded v3 filter for metadata KEY=VALUE pairs (ANDed)."""
+    return json.dumps(
+        [{"column": "metadata", "type": "stringObject", "operator": "=", "key": k, "value": v} for k, v in pairs]
+    )
 
 
 def _iso_with_tz(dt: datetime) -> str:
