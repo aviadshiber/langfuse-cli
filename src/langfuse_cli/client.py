@@ -170,7 +170,13 @@ class LangfuseClient:
         to_timestamp: datetime | None = None,
         metadata: list[tuple[str, str]] | None = None,
     ) -> list[dict[str, Any]]:
-        """List observations with optional filters."""
+        """List observations with optional filters.
+
+        Note: `/api/public/observations` filters on `fromStartTime` / `toStartTime`,
+        unlike `/api/public/traces` and `/api/public/sessions` which use
+        `fromTimestamp` / `toTimestamp`. Sending the latter to the observations
+        endpoint is silently ignored by the API.
+        """
         params: dict[str, Any] = {}
         if trace_id:
             params["traceId"] = trace_id
@@ -179,9 +185,9 @@ class LangfuseClient:
         if name:
             params["name"] = name
         if from_timestamp:
-            params["fromTimestamp"] = _iso_with_tz(from_timestamp)
+            params["fromStartTime"] = _iso_with_tz(from_timestamp)
         if to_timestamp:
-            params["toTimestamp"] = _iso_with_tz(to_timestamp)
+            params["toStartTime"] = _iso_with_tz(to_timestamp)
         if metadata:
             params["filter"] = _build_metadata_filter(metadata)
         return list(self._paginate("/observations", params, limit))
