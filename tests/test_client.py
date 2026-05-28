@@ -467,7 +467,13 @@ class TestObservationsMethods:
 
     @respx.mock
     def test_list_observations_with_timestamps(self, client: LangfuseClient) -> None:
-        """Test list_observations() passes timestamp filters."""
+        """Test list_observations() passes timestamp filters using the observations-endpoint param names.
+
+        Regression for #39: `/api/public/observations` filters on `fromStartTime` /
+        `toStartTime`, NOT `fromTimestamp` / `toTimestamp` (which are correct for
+        `/traces` and `/sessions`). Sending the wrong names is silently ignored by
+        the Langfuse API.
+        """
         mock_route = respx.get("https://test.langfuse.com/api/public/observations").mock(
             return_value=httpx.Response(
                 200,
@@ -487,8 +493,11 @@ class TestObservationsMethods:
         assert mock_route.called
         request = mock_route.calls.last.request
         url_str = str(request.url)
-        assert "fromTimestamp=2024-01-01T00%3A00%3A00%2B00%3A00" in url_str
-        assert "toTimestamp=2024-01-31T00%3A00%3A00%2B00%3A00" in url_str
+        assert "fromStartTime=2024-01-01T00%3A00%3A00%2B00%3A00" in url_str
+        assert "toStartTime=2024-01-31T00%3A00%3A00%2B00%3A00" in url_str
+        # Negative assertion: the trace/session-style names must not leak through.
+        assert "fromTimestamp=" not in url_str
+        assert "toTimestamp=" not in url_str
 
 
 class TestDatasetMethods:
