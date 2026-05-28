@@ -491,13 +491,16 @@ class TestObservationsMethods:
         )
 
         assert mock_route.called
-        request = mock_route.calls.last.request
-        url_str = str(request.url)
-        assert "fromStartTime=2024-01-01T00%3A00%3A00%2B00%3A00" in url_str
-        assert "toStartTime=2024-01-31T00%3A00%3A00%2B00%3A00" in url_str
-        # Negative assertion: the trace/session-style names must not leak through.
-        assert "fromTimestamp=" not in url_str
-        assert "toTimestamp=" not in url_str
+        params = mock_route.calls.last.request.url.params
+
+        # Positive: observations endpoint must carry fromStartTime / toStartTime.
+        assert params.get("fromStartTime") == "2024-01-01T00:00:00+00:00"
+        assert params.get("toStartTime") == "2024-01-31T00:00:00+00:00"
+
+        # Regression guard for #39: the trace/session-style names must never leak
+        # back in via a future refactor that unifies param assembly.
+        assert "fromTimestamp" not in params
+        assert "toTimestamp" not in params
 
 
 class TestDatasetMethods:
