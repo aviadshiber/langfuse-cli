@@ -1,3 +1,12 @@
+> [!WARNING]
+> **This project is archived and no longer maintained.**
+> Langfuse retires the observations endpoint that `lf` depends on on **2026-11-16**, so `lf` stops working on that date.
+> Use the official Langfuse CLI and agent skill instead:
+>
+> - CLI: [`@langfuse/cli`](https://github.com/langfuse/langfuse-cli) (`npm i -g @langfuse/cli`, then `langfuse api <resource> <action>`)
+> - Agent skill: [`langfuse/skills`](https://github.com/langfuse/skills) (`npx skills add langfuse/skills --skill "langfuse"`)
+> - Docs: <https://langfuse.com/docs/api-and-data-platform/features/cli>
+
 # langfuse-cli (`lf`)
 
 [![CI](https://github.com/aviadshiber/langfuse-cli/actions/workflows/test.yml/badge.svg)](https://github.com/aviadshiber/langfuse-cli/actions/workflows/test.yml)
